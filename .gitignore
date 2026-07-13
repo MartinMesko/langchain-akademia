@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# lokálny server (launcher)
+.server.log
+.server.lock
+
+# balíky
+*.zip
+
+# nástroje editora / Claude Code (netreba na hosting)
+.claude/

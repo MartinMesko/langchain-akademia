@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>LangChain Akadémia · Inteligentné aplikácie s ChatGPT</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦜</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Kalam:wght@300;400;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=7-kariera">
+</head>
+<body>
+
+<!-- HORNÁ LIŠTA -->
+<header class="topbar">
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="brand" href="#/dashboard">
+    <span class="brand-emoji">🦜</span><span class="brand-link">🔗</span>
+    <span class="brand-text">LangChain <b>Akadémia</b></span>
+  </a>
+  <div class="topbar-right">
+    <div class="ring-mini" id="ringMini" title="Celkový postup kurzom">
+      <svg viewBox="0 0 44 44">
+        <circle class="ring-bg" cx="22" cy="22" r="18"></circle>
+        <circle class="ring-fg" id="ringMiniFg" cx="22" cy="22" r="18"></circle>
+      </svg>
+      <span id="ringMiniLabel">0%</span>
+    </div>
+    <div class="xp-pill" id="xpPill" title="Skúsenostné body">
+      <span class="xp-bolt">⚡</span><span id="xpValue">0</span><span class="xp-suffix">XP</span>
+    </div>
+    <div class="level-chip" id="levelChip" title="Tvoj level"></div>
+  </div>
+</header>
+
+<!-- BOČNÝ PANEL -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-inner">
+    <div class="side-search">
+      <input type="text" id="lessonFilter" placeholder="🔍 Hľadať lekciu…" autocomplete="off">
+    </div>
+    <nav id="sideNav"></nav>
+  </div>
+</aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<input type="file" id="importFile" accept="application/json,.json" style="display:none">
+
+<!-- HLAVNÝ OBSAH -->
+<main class="main" id="main">
+  <div id="view" class="view"></div>
+</main>
+
+<!-- TOASTY / LEVEL-UP / KONFETY -->
+<div class="toast-zone" id="toastZone"></div>
+<div class="levelup-overlay" id="levelupOverlay">
+  <div class="levelup-card">
+    <div class="levelup-glow"></div>
+    <div class="levelup-emoji" id="levelupEmoji">🏆</div>
+    <h2>LEVEL UP!</h2>
+    <p id="levelupText"></p>
+    <button class="btn btn-primary" id="levelupClose">Pokračovať 🚀</button>
+  </div>
+</div>
+<canvas id="confettiCanvas"></canvas>
+
+<script src="js/highlight.js?v=7-kariera" defer></script>
+<script src="js/data1.js?v=7-kariera" defer></script>
+<script src="js/data2.js?v=7-kariera" defer></script>
+<script src="js/data3.js?v=7-kariera" defer></script>
+<script src="js/data4.js?v=7-kariera" defer></script>
+<script src="js/data5.js?v=7-kariera" defer></script>
+<script src="js/data6.js?v=7-kariera" defer></script>
+<script src="js/data0.js?v=7-kariera" defer></script>
+<script src="js/exam.js?v=7-kariera" defer></script>
+<script src="js/explain.js?v=7-kariera" defer></script>
+<script src="js/projects.js?v=7-kariera" defer></script>
+<script src="js/app.js?v=7-kariera" defer></script>
+</body>
+</html>
