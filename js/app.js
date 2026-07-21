@@ -620,8 +620,14 @@
     lesson.exercises.forEach((ex, ei) => {
       const uid = 'ex' + (++exUid);
       const key = `e:${lesson.id}:${ei}`;
-      const solved = state.ex[key];
-      EX[uid] = { lesson: lesson.id, idx: ei, data: ex, key };
+      let solved = state.ex[key];
+      const reg = EX[uid] = { lesson: lesson.id, idx: ei, data: ex, key };
+      // Spätná oprava: write cvičenia zamknuté STAROU logikou „Ukázať riešenie"
+      // (stav 'revealed') odomkni — riešenie už videl, odovzdanie dá polovičné XP.
+      if (ex.t === 'write' && solved === 'revealed') {
+        reg.revealed = true;
+        solved = null;
+      }
       html += `<div class="ex-card reveal ${solved ? 'solved' : ''}" id="${uid}">
         <div class="ex-head">
           <span class="ex-type-badge">${EX_LABELS[ex.t]}</span>
@@ -730,7 +736,10 @@
 
   function solveExercise(uid, how, anchor) {
     const reg = EX[uid];
-    if (state.ex[reg.key]) return;
+    const stored = state.ex[reg.key];
+    // Hotové cvičenie sa nerieši znova — VÝNIMKA: staré write 'revealed'
+    // (zamknuté starou logikou) sa smie dodatočne odovzdať.
+    if (stored && !(stored === 'revealed' && reg.data.t === 'write' && how === 'ok')) return;
     if (how === 'ok' && reg.revealed) how = 'ok2'; // vyriešené po zobrazení riešenia → polovičné XP
     state.ex[reg.key] = how; // 'ok' | 'ok2' | 'revealed'
     persist();
@@ -898,7 +907,7 @@
 
   function renderDashboard() {
     const doneCnt = state.done.length;
-    const exCnt = Object.values(state.ex).filter(v => v === 'ok').length;
+    const exCnt = Object.values(state.ex).filter(v => v === 'ok' || v === 'ok2').length;
     const lvlIdx = levelIndex(state.xp);
     const nextLvl = LEVELS[lvlIdx + 1];
     const lvlProgress = nextLvl ? Math.round((state.xp - LEVELS[lvlIdx].xp) / (nextLvl.xp - LEVELS[lvlIdx].xp) * 100) : 100;
