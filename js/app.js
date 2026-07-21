@@ -615,7 +615,7 @@
       <div class="zone-head reveal">
         <div class="zh-icon">🏋️</div>
         <div><h2>Praktické cvičenia</h2>
-        <p>Vyrieš úlohy ako v PyCharme. Pomôcka je zadarmo, zobrazenie riešenia ťa pripraví o XP.</p></div>
+        <p>Vyrieš úlohy ako v PyCharme. Pomôcka je zadarmo. Riešenie si môžeš kedykoľvek pozrieť a úlohu aj tak odovzdať — len za polovičné XP.</p></div>
       </div>`;
     lesson.exercises.forEach((ex, ei) => {
       const uid = 'ex' + (++exUid);
@@ -626,7 +626,7 @@
         <div class="ex-head">
           <span class="ex-type-badge">${EX_LABELS[ex.t]}</span>
           <h3>${ex.title}</h3>
-          <span class="ex-solved-flag">✓ Vyriešené ${solved === 'ok' ? `(+${ex.xp} XP)` : ''}</span>
+          <span class="ex-solved-flag">✓ Vyriešené ${solved === 'ok' ? `(+${ex.xp} XP)` : solved === 'ok2' ? `(+${Math.ceil(ex.xp / 2)} XP)` : ''}</span>
         </div>
         <div class="ex-intro">${ex.intro}</div>
         <div class="ex-body">${exBodyHTML(uid, ex, solved)}</div>
@@ -731,15 +731,25 @@
   function solveExercise(uid, how, anchor) {
     const reg = EX[uid];
     if (state.ex[reg.key]) return;
-    state.ex[reg.key] = how; // 'ok' | 'revealed'
+    if (how === 'ok' && reg.revealed) how = 'ok2'; // vyriešené po zobrazení riešenia → polovičné XP
+    state.ex[reg.key] = how; // 'ok' | 'ok2' | 'revealed'
     persist();
     const card = document.getElementById(uid);
     card.classList.add('solved');
     card.querySelector('.ex-success')?.classList.add('show');
+    const flag = card.querySelector('.ex-solved-flag');
+    if (flag && (how === 'ok' || how === 'ok2')) {
+      const plneXP = reg.data.xp || 20;
+      flag.textContent = `✓ Vyriešené (+${how === 'ok' ? plneXP : Math.ceil(plneXP / 2)} XP)`;
+    }
     card.querySelectorAll('[data-action="ex-check-blanks"],[data-action="ex-check-order"],[data-action="ex-check-write"],[data-action="ex-reveal-blanks"],[data-action="ex-reset-order"]').forEach(b => b.disabled = true);
     if (how === 'ok') {
       addXP(reg.data.xp || 20, anchor);
       confettiBurst(46);
+    } else if (how === 'ok2') {
+      addXP(Math.ceil((reg.data.xp || 20) / 2), anchor);
+      confettiBurst(28);
+      toast('✅', 'Vyriešené s nahliadnutím do riešenia — polovičné XP. Nabudúce to dáš aj bez neho! 💪');
     } else {
       toast('👁', 'Riešenie zobrazené — XP tentoraz nebude, ale hlavné je pochopiť!');
     }
@@ -1580,9 +1590,15 @@
     else if (a === 'ex-reveal-blanks') revealBlanks(t.dataset.uid);
     else if (a === 'ex-hint') document.querySelector(`[data-hint="${t.dataset.uid}"]`)?.classList.toggle('show');
     else if (a === 'ex-show-solution') {
-      document.querySelector(`[data-solution="${t.dataset.uid}"]`)?.classList.toggle('show');
+      const box = document.querySelector(`[data-solution="${t.dataset.uid}"]`);
+      box?.classList.toggle('show');
       const reg = EX[t.dataset.uid];
-      if (reg && !state.ex[reg.key]) solveExercise(t.dataset.uid, 'revealed');
+      // Zobrazenie riešenia NEuzamyká odovzdanie — len si ho poznačíme.
+      // Cvičenie sa dá stále odovzdať cez ✓ Skontrolovať (za polovičné XP).
+      if (reg && !state.ex[reg.key] && box?.classList.contains('show') && !reg.revealed) {
+        reg.revealed = true;
+        toast('👁', 'Riešenie zobrazené — pokojne si ho prepíš a odovzdaj cez <b>✓ Skontrolovať</b>. Dostaneš polovičné XP.');
+      }
     }
     else if (a === 'ex-order-pick') {
       const reg = EX[t.dataset.uid];
