@@ -589,7 +589,26 @@
   let exUid = 0;
   const EX_LABELS = { blanks: '🧩 Doplň kód', order: '🔀 Zoraď', write: '⌨️ Napíš kód' };
 
+  // Zlúči cvičenia lekcie s extra „Napíš kód" sadou (practice1-3.js).
+  // Extra cvičenia idú ZA pôvodné (indexy uloženého postupu sa nemenia)
+  // a XP + úvod dostávajú podľa poradia: 1-3 ľahké, 4-6 stredné, 7-9 ťažké.
+  const EXTRA_INTRO = [
+    'Rozcvička — základný vzor, ktorý musíš mať v prstoch.',
+    'Stredná obtiažnosť — skombinuj viac krokov dokopy.',
+    'Výzva — poskladaj to ako v skutočnom projekte.'
+  ];
+  function allExercises(lesson) {
+    const base = lesson.exercises || [];
+    const extra = ((window.EXTRA_WRITE || {})[lesson.id] || []).map((e, i) => ({
+      ...e,
+      intro: e.intro || EXTRA_INTRO[i < 3 ? 0 : i < 6 ? 1 : 2],
+      xp: e.xp || (i < 3 ? 10 : i < 6 ? 15 : 20),
+    }));
+    return base.concat(extra);
+  }
+
   function exercisesHTML(lesson) {
+    lesson = { id: lesson.id, exercises: allExercises(lesson) };
     if (!lesson.exercises || !lesson.exercises.length) return '';
     let html = `
     <section class="ex-zone">
@@ -814,7 +833,7 @@
         <span class="crumb-sep">›</span><span>${typeof l.num === 'string' ? '🐍 Prípravná lekcia ' + l.num : (l.section === 's5' ? '🤖 Bonus · Lekcia ' + l.num : 'Lekcia ' + l.num + '/23')}</span>
         <span style="flex:1"></span>
         <span class="lesson-meta-chip">⏱ ${l.duration}</span>
-        <span class="lesson-meta-chip">⚡ +${50 + (l.quiz?.length || 0) * 10 + (l.exercises || []).reduce((a, e) => a + (e.xp || 20), 0)} XP v hre</span>
+        <span class="lesson-meta-chip">⚡ +${50 + (l.quiz?.length || 0) * 10 + allExercises(l).reduce((a, e) => a + (e.xp || 20), 0)} XP v hre</span>
       </div>
       <div class="lesson-header">
         <div class="lesson-header-icon">${l.icon}</div>
