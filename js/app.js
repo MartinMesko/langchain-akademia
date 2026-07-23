@@ -604,7 +604,215 @@
       intro: e.intro || EXTRA_INTRO[i < 3 ? 0 : i < 6 ? 1 : 2],
       xp: e.xp || (i < 3 ? 10 : i < 6 ? 15 : 20),
     }));
-    return base.concat(extra);
+    // Sprísnené kontroly (strict.js): cvičeniam s viacnásobnými požiadavkami
+    // („dve otázky", „tri položky"…) pridaj #N: count-tokeny.
+    return base.concat(extra).map(e => {
+      const navyse = (window.STRICT_MUSTS || {})[lesson.id + '|' + e.title];
+      return (e.t === 'write' && navyse) ? { ...e, must: (e.must || []).concat(navyse) } : e;
+    });
+  }
+
+  /* ----------------------------------------------------------
+     WRITE cvičenia: count-tokeny, vysvetlenia, rebrík pomôcok
+     ---------------------------------------------------------- */
+  // "#3:model.invoke(" → { n: 3, tok: "model.invoke(" }
+  function tokenSpec(t) {
+    const m = /^#(\d+):/.exec(t);
+    return m ? { n: +m[1], tok: t.slice(m[0].length) } : { n: 1, tok: t };
+  }
+  function countOcc(hay, needle) {
+    if (!needle) return 0;
+    let c = 0, i = 0;
+    while ((i = hay.indexOf(needle, i)) !== -1) { c++; i += needle.length; }
+    return c;
+  }
+
+  // Slovník vysvetlení — použije sa pri checkliste aj pri odkrývaní kódu
+  const TOKEN_EXPLAIN = [
+    ['create_history_aware_retriever', 'staviteľ retrievera s pamäťou — otázku najprv preformuluje podľa histórie'],
+    ['create_retrieval_chain', 'spojí retriever s dokumentovým chainom do celého RAG'],
+    ['create_stuff_documents_chain', 'chain, ktorý nájdené dokumenty vloží do {context} a zavolá model'],
+    ['create_tool_calling_agent', 'zloží „mozog" agenta z modelu, nástrojov a promptu'],
+    ['create_react_agent', 'LangGraph továreň — hotový ReAct agent jedným volaním'],
+    ['AgentExecutor', '„telo" agenta — točí slučku a reálne spúšťa nástroje'],
+    ['agent_scratchpad', 'povinný zápisník agenta v prompte'],
+    ['MessagesPlaceholder', 'rezervované miesto v prompte na zoznam správ (históriu)'],
+    ['RunnableParallel', 'spustí viac vetiev naraz — výsledkom je slovník'],
+    ['RunnableLambda', 'obal na vlastnú funkciu, aby sa dala zapojiť do rúry cez |'],
+    ['RunnablePassthrough', 'pošle vstup ďalej nezmenený'],
+    ['StrOutputParser', 'parser — z AIMessage vytiahne čistý text'],
+    ['JsonOutputParser', 'parser — z odpovede modelu spraví Python slovník'],
+    ['CommaSeparatedListOutputParser', 'parser — z odpovede spraví Python zoznam'],
+    ['PydanticOutputParser', 'parser s validáciou cez Pydantic triedu'],
+    ['get_format_instructions', 'vygeneruje inštrukciu o formáte, ktorú vložíš do promptu'],
+    ['from_messages', 'vyrobí chat šablónu zo zoznamu dvojíc (rola, text)'],
+    ['from_template', 'vyrobí šablónu z jedného textu s {premennými}'],
+    ['ChatPromptTemplate', 'trieda chat šablón s rolami'],
+    ['PromptTemplate', 'trieda jednoduchých textových šablón'],
+    ['SystemMessage', 'systémová správa — pravidlá a rola modelu (vždy prvá)'],
+    ['HumanMessage', 'správa používateľa'],
+    ['AIMessage', 'správa modelu — odpoveď, few-shot ukážka alebo história'],
+    ['ToolMessage', 'výsledok nástroja poslaný späť modelu'],
+    ['ChatOpenAI', 'vytvorenie objektu OpenAI chatmodelu'],
+    ['ChatOllama', 'lokálny model cez Ollama (bez API kľúča)'],
+    ['OllamaEmbeddings', 'lokálne embeddingy'],
+    ['OpenAIEmbeddings', 'embedding model — prevádza text na vektory'],
+    ['embed_documents', 'embedne zoznam textov naraz'],
+    ['embed_query', 'embedne jednu otázku'],
+    ['from_documents', 'vytvorí vektorovú databázu z chunkov (indexovanie)'],
+    ['persist_directory', 'priečinok, kam sa databáza uloží na disk'],
+    ['embedding_function', 'embedding model pri OTVÁRANÍ existujúcej DB'],
+    ['as_retriever', 'z databázy vyrobí retriever (dá sa zapojiť do chainu)'],
+    ['similarity_search', 'nájde najpodobnejšie chunky k otázke'],
+    ['add_documents', 'pridá nové dokumenty do existujúcej DB'],
+    ['split_documents', 'rozseká Documenty na chunky (metadáta sa dedia)'],
+    ['split_text', 'rozseká obyčajný string na kúsky'],
+    ['chunk_overlap', 'prekrytie susedných chunkov'],
+    ['chunk_size', 'maximálna dĺžka jedného chunku'],
+    ['RecursiveCharacterTextSplitter', 'štandardný „sekáčik" textov'],
+    ['TextLoader', 'načíta textový súbor ako Document'],
+    ['PyPDFLoader', 'načíta PDF — každá strana je Document'],
+    ['DirectoryLoader', 'hromadne načíta súbory z priečinka'],
+    ['WebBaseLoader', 'stiahne text z webstránky'],
+    ['bind_tools', 'prilepí modelu zoznam nástrojov'],
+    ['tool_calls', 'zoznam požiadaviek modelu na spustenie nástrojov'],
+    ['@tool', 'dekorátor — z funkcie vyrobí nástroj pre AI'],
+    ['load_dotenv', 'načíta .env súbor s kľúčmi'],
+    ['os.getenv', 'prečíta premennú prostredia (None, ak chýba)'],
+    ['os.environ', 'zapíše premennú prostredia za behu'],
+    ['session_state', 'trvalá pamäť Streamlit appky medzi rerunmi'],
+    ['chat_input', 'vstupné pole chatu v Streamlite'],
+    ['chat_message', 'chatová bublina (user/assistant) v Streamlite'],
+    ['st.title', 'nadpis Streamlit stránky'],
+    ['add_routes', 'vystaví chain ako REST API (LangServe)'],
+    ['RemoteRunnable', 'klient vzdialeného chainu — rovnaké invoke/batch/stream'],
+    ['uvicorn.run', 'spustí webový server'],
+    ['FastAPI', 'webová aplikácia'],
+    ['MemorySaver', 'checkpointer — pamäť grafu v RAM'],
+    ['thread_id', 'identifikátor konverzačného vlákna'],
+    ['StateGraph', 'vlastný graf so zdieľaným stavom'],
+    ['add_conditional_edges', 'podmienené vetvenie grafu (router vracia meno uzla)'],
+    ['add_node', 'pridá uzol (funkciu) do grafu'],
+    ['add_edge', 'pridá pevnú hranu medzi uzlami'],
+    ['.compile()', 'zloží graf do spustiteľnej podoby'],
+    ['temperature', 'miera náhodnosti odpovedí (0 = presné a stabilné)'],
+    ['max_tokens', 'strop dĺžky (a ceny) odpovede'],
+    ['token_usage', 'metadáta o spotrebovaných tokenoch'],
+    ['set_llm_cache', 'zapne cache odpovedí modelu'],
+    ['InMemoryCache', 'cache v pamäti programu'],
+    ['time.time', 'meranie času (stopky)'],
+    ['json.dumps', 'prevedie Python objekt na JSON text'],
+    ['re.sub', 'regex — nájdi vzor a nahraď'],
+    ['while True', 'nekonečná slučka — čaká na vstupy'],
+    ['continue', 'preskočí zvyšok kola slučky'],
+    ['break', 'vyskočí zo slučky'],
+    ['input(', 'načíta text od používateľa z konzoly'],
+    ['print(', 'vypíše do konzoly'],
+    ['.append(', 'pridá položku na koniec zoznamu'],
+    ['enumerate(', 'cyklus s poradovým číslom položky'],
+    ['isinstance(', 'otestuje typ objektu'],
+    ['.invoke(', 'spustí model / chain / nástroj a počká na výsledok'],
+    ['.batch(', 'spracuje viac vstupov naraz (paralelne)'],
+    ['.stream(', 'výstup po kúskoch, ako sa generuje'],
+    ['.content', 'text vo vnútri správy (atribút — bez zátvoriek)'],
+    ['.partial(', 'preddosadí časť premenných šablóny'],
+    ['def ', 'definícia funkcie'],
+    ['return', 'vráti hodnotu volajúcemu a ukončí funkciu'],
+    ['lambda', 'mini-funkcia bez mena na jeden výraz'],
+    ['for ', 'cyklus cez položky'],
+    ['elif', 'ďalšia vetva podmienky'],
+    ['else', 'vetva „inak"'],
+    ['if ', 'podmienka'],
+    ['f"', 'f-string — text s {dosadenými} hodnotami'],
+    ["f'", 'f-string — text s {dosadenými} hodnotami'],
+    ['"""', 'docstring / viacriadkový text v trojitých úvodzovkách'],
+    ['len(', 'počet položiek alebo znakov'],
+    ['sum(', 'súčet položiek'],
+    ['sorted(', 'zoradenie (reverse=True = zostupne)'],
+    ['zip(', 'spáruje dva zoznamy po dvojiciach'],
+    ['.join(', 'zlepí položky do jedného textu'],
+    ['.lower()', 'prevedie text na malé písmená'],
+    ['.strip()', 'oreže medzery/nové riadky okolo textu'],
+    ['.get(', 'bezpečné čítanie zo slovníka s náhradnou hodnotou'],
+    ['open(', 'otvorí súbor na čítanie/zápis'],
+    ['import ', 'import knižnice'],
+    ['from ', 'import konkrétnej veci z knižnice'],
+  ];
+
+  function explainToken(tok) {
+    const hit = TOKEN_EXPLAIN.find(([p]) => tok.includes(p));
+    return hit ? hit[1] : 'presne tento kúsok kódu musí byť v riešení';
+  }
+
+  function explainLine(line) {
+    const l = line.trim();
+    if (l.startsWith('#')) return 'komentár — poznámka pre ľudí, Python ho ignoruje';
+    const hits = TOKEN_EXPLAIN.filter(([p]) => l.includes(p)).slice(0, 2).map(([, e]) => e);
+    let prefix = '';
+    const prirad = /^([A-Za-zÀ-ž_][\w]*)\s*=[^=]/.exec(l);
+    if (prirad) prefix = `do premennej <code>${prirad[1]}</code> ukladáme — `;
+    if (!hits.length) return prefix ? prefix + 'výsledok výrazu vpravo' : 'pomocný riadok — dopĺňa logiku okolo';
+    return prefix + hits.join('; ');
+  }
+
+  // Rebrík pomôcok: 2 navádzacie kroky (bez kódu) → potom kód po blokoch,
+  // každý riadok s vysvetlením, až po celé riešenie.
+  function buildHintSteps(ex) {
+    const steps = [];
+    const nsStarter = new Set((ex.starter || '').split('\n').map(l => noSpace(l)).filter(Boolean));
+    const noveRiadky = (ex.solution || '').split('\n')
+      .filter(l => l.trim().length && !nsStarter.has(noSpace(l)));
+
+    // 1) Rozbor zadania
+    const poloky = (ex.must || []).map(alts => {
+      const s = tokenSpec(alts[0]);
+      return `<li><code>${escapeHtml(s.tok)}</code>${s.n > 1 ? ` <b>aspoň ${s.n}×</b>` : ''} — ${explainToken(s.tok)}</li>`;
+    }).join('');
+    steps.push({
+      title: '1. krok — rozlož si zadanie',
+      html: `Prečítaj si zadanie ešte raz a rozlož ho na povinné stavebné kúsky. Kontrola bude hľadať presne toto:` +
+        `<ul>${poloky}</ul>Premysli si, v akom PORADÍ tieto kúsky v kóde pôjdu — a skús písať. Ďalšia pomôcka prezradí plán.`
+    });
+
+    // 2) Plán postupu
+    const importy = noveRiadky.filter(l => /^(from |import )/.test(l.trim())).length;
+    const casti = [];
+    if (importy) casti.push(`${importy}× import`);
+    if (noveRiadky.some(l => /^\s*def /.test(l))) casti.push('definícia funkcie');
+    if (noveRiadky.some(l => /^\s*class /.test(l))) casti.push('trieda');
+    if (noveRiadky.some(l => /^\s*(for |while )/.test(l))) casti.push('cyklus');
+    if (noveRiadky.some(l => /^\s*(if |elif |else)/.test(l))) casti.push('podmienka');
+    const nInv = noveRiadky.filter(l => l.includes('.invoke(')).length;
+    if (nInv) casti.push(`${nInv}× volanie .invoke()`);
+    const nPrint = noveRiadky.filter(l => l.includes('print(')).length;
+    if (nPrint) casti.push(`${nPrint}× výpis print()`);
+    steps.push({
+      title: '2. krok — plán postupu',
+      html: `<b>Rada:</b> ${ex.hint || 'postupuj podľa vzoru z lekcie.'}<br><br>` +
+        `<b>Štruktúra vzorového riešenia:</b> ${noveRiadky.length} riadkov nad rámec štartovacieho kódu` +
+        (casti.length ? ` — obsahuje: ${casti.join(' · ')}.` : '.') +
+        `<br>Skús to teraz poskladať sám — od ďalšej pomôcky sa už odkrýva kód (a odovzdanie bude za polovičné XP).`
+    });
+
+    // 3+) Kód po blokoch s vysvetlením každého riadku
+    const blokov = noveRiadky.length <= 3 ? 1 : noveRiadky.length <= 8 ? 2 : 3;
+    const naBlok = Math.ceil(noveRiadky.length / blokov);
+    for (let b = 0; b < blokov; b++) {
+      const riadky = noveRiadky.slice(b * naBlok, (b + 1) * naBlok);
+      if (!riadky.length) break;
+      const vysvetlenia = riadky
+        .map(l => `<li><code>${escapeHtml(l.trim().slice(0, 46))}${l.trim().length > 46 ? '…' : ''}</code> — ${explainLine(l)}</li>`)
+        .join('');
+      const posledny = b === blokov - 1;
+      steps.push({
+        title: `${b + 3}. krok — kód, časť ${b + 1}/${blokov}`,
+        html: `<pre>${highlightPython(riadky.join('\n'))}</pre><b>Čo tu ktorý riadok robí:</b><ul>${vysvetlenia}</ul>` +
+          (posledny
+            ? '🏁 <b>Celé riešenie je odkryté.</b> Prepíš si ho do editora (pochop pritom každý riadok!) a odovzdaj cez ✓ Skontrolovať.'
+            : 'Skús pokračovať sám — ďalšia pomôcka odkryje ďalší blok.')
+      });
+    }
+    return steps;
   }
 
   function exercisesHTML(lesson) {
@@ -680,14 +888,14 @@
         <div class="ex-success ${solved ? 'show' : ''}" data-success="${uid}">🎉 Presne tak! Poradie je správne.</div>`;
     }
     if (ex.t === 'write') {
-      // ✅ Presná špecifikácia: checklist vygenerovaný z kontrolných tokenov —
-      // používateľ presne vidí, ČO musí jeho kód obsahovať.
+      // ✅ Presná špecifikácia: checklist vygenerovaný z kontrolných tokenov
+      // (vrátane #N: počtov) — používateľ presne vidí, ČO musí kód obsahovať.
       const chips = (ex.must || [])
-        .map(alts => `<code>${escapeHtml(alts[0])}</code>`)
+        .map(alts => {
+          const s = tokenSpec(alts[0]);
+          return `<code>${escapeHtml(s.tok)}</code>${s.n > 1 ? `<span class="wt-cnt">≥${s.n}×</span>` : ''}`;
+        })
         .join('<span class="wt-sep">·</span>');
-      // 🪜 „Ako začať": prvá polovica riešenia (max 3 riadky) ako odrazový mostík
-      const riadky = (ex.solution || '').split('\n').filter(l => l.trim().length);
-      const kostra = riadky.slice(0, Math.min(3, Math.max(1, Math.floor(riadky.length / 2)))).join('\n');
       return `
         <div class="write-task">
           <div class="wt-label">🎯 Zadanie</div>
@@ -703,15 +911,10 @@
         </div>
         <div class="ex-actions">
           <button class="btn btn-primary btn-sm" data-action="ex-check-write" data-uid="${uid}" ${solved ? 'disabled' : ''}>✓ Skontrolovať</button>
-          <button class="btn btn-ghost btn-sm" data-action="ex-hint" data-uid="${uid}">💡 Pomôcka</button>
-          <button class="btn btn-ghost btn-sm" data-action="ex-hint2" data-uid="${uid}">🪜 Ako začať</button>
+          <button class="btn btn-ghost btn-sm" data-action="ex-hint-next" data-uid="${uid}">💡 Pomôcka</button>
           <button class="btn btn-ghost btn-sm" data-action="ex-show-solution" data-uid="${uid}">👁 Ukázať riešenie</button>
         </div>
-        <div class="hint-box" data-hint="${uid}"><b>💡 Pomôcka:</b> ${ex.hint || ''}</div>
-        <div class="hint-box hint-kostra" data-hint2="${uid}">
-          <b>🪜 Začni takto</b> (prvé riadky riešenia — zvyšok doplň podľa zadania a checklistu):
-          <pre>${highlightPython(kostra)}</pre>
-        </div>
+        <div class="hint-ladder" data-hintbox="${uid}"></div>
         <div class="write-feedback" data-feedback="${uid}"></div>
         <div class="solution-box" data-solution="${uid}">
           <div class="sol-label">Vzorové riešenie</div>
@@ -837,19 +1040,50 @@
     const area = document.querySelector(`.write-area[data-write="${uid}"]`);
     const code = area.value;
     const nCode = norm(code), nsCode = noSpace(code);
+    const fb = document.querySelector(`[data-feedback="${uid}"]`);
+    const fail = html => { fb.className = 'write-feedback show miss'; fb.innerHTML = html; };
+
+    // 1) Kód sa musí líšiť od štartovacieho (odovzdanie prázdneho startera neprejde)
+    const nsStarter = noSpace(reg.data.starter || '');
+    if (!nsCode || nsCode === nsStarter) {
+      fail('✍️ Zatiaľ vidím len štartovací kód — dopíš vlastné riešenie podľa zadania a checklistu.');
+      return;
+    }
+
+    // 2) Vyváženosť zátvoriek — najčastejší preklep
+    const parove = [['(', ')'], ['[', ']'], ['{', '}']];
+    const zle = parove
+      .filter(([o, z]) => countOcc(code, o) !== countOcc(code, z))
+      .map(([o, z]) => `<code>${o} ${z}</code>`);
+    if (zle.length) {
+      fail(`🔧 Skontroluj zátvorky — počty otváracích a zatváracích nesedia pri: ${zle.join(', ')}. ` +
+        'Každá otvorená zátvorka musí mať svoju zatváraciu.');
+      return;
+    }
+
+    // 3) Povinné prvky vrátane počtov (#N: tokeny)
     const missing = [];
     reg.data.must.forEach(alts => {
-      const hit = alts.some(tok => nCode.includes(norm(tok)) || nsCode.includes(noSpace(tok)));
-      if (!hit) missing.push(alts[0]);
+      const hit = alts.some(t => {
+        const s = tokenSpec(t);
+        return countOcc(nCode, norm(s.tok)) >= s.n || countOcc(nsCode, noSpace(s.tok)) >= s.n;
+      });
+      if (!hit) {
+        const s = tokenSpec(alts[0]);
+        missing.push({ tok: s.tok, n: s.n, ma: Math.max(countOcc(nCode, norm(s.tok)), countOcc(nsCode, noSpace(s.tok))) });
+      }
     });
-    const fb = document.querySelector(`[data-feedback="${uid}"]`);
+
     if (!missing.length) {
       fb.className = 'write-feedback show good';
       fb.innerHTML = '✅ Všetky kľúčové prvky sú na mieste!';
       solveExercise(uid, 'ok', btn);
     } else {
-      fb.className = 'write-feedback show miss';
-      fb.innerHTML = `🔎 Dobrý začiatok! V kóde mi ešte chýba:<ul>${missing.map(m => `<li><code>${escapeHtml(m)}</code></li>`).join('')}</ul>`;
+      fail(`🔎 Dobrý začiatok! Ešte to nie je ono:<ul>${missing.map(m =>
+        `<li><code>${escapeHtml(m.tok)}</code>${m.n > 1
+          ? ` — potrebujem aspoň <b>${m.n}×</b> (zatiaľ ${m.ma}×)`
+          : ' — v kóde chýba'}</li>`).join('')}</ul>` +
+        'Pozri checklist pri zadaní alebo si vypýtaj 💡 Pomôcku.');
     }
   }
 
@@ -1668,7 +1902,34 @@
     else if (a === 'ex-check-blanks') checkBlanks(t.dataset.uid, t);
     else if (a === 'ex-reveal-blanks') revealBlanks(t.dataset.uid);
     else if (a === 'ex-hint') document.querySelector(`[data-hint="${t.dataset.uid}"]`)?.classList.toggle('show');
-    else if (a === 'ex-hint2') document.querySelector(`[data-hint2="${t.dataset.uid}"]`)?.classList.toggle('show');
+    else if (a === 'ex-hint-next') {
+      // Rebrík pomôcok: každé kliknutie odkryje ďalší krok
+      const uid = t.dataset.uid;
+      const reg = EX[uid];
+      if (!reg) return;
+      if (!reg.hintSteps) { reg.hintSteps = buildHintSteps(reg.data); reg.hintIdx = 0; }
+      if (reg.hintIdx >= reg.hintSteps.length) return;
+      const krok = reg.hintSteps[reg.hintIdx];
+      const box = document.querySelector(`[data-hintbox="${uid}"]`);
+      const el = document.createElement('div');
+      el.className = 'hint-step';
+      el.innerHTML = `<div class="hint-step-title">${krok.title}</div><div class="hint-step-body">${krok.html}</div>`;
+      box.appendChild(el);
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      reg.hintIdx++;
+      // od 3. kroku sa odkrýva kód → polovičné XP (ako pri Ukázať riešenie)
+      if (reg.hintIdx === 3 && !reg.revealed && !state.ex[reg.key]) {
+        reg.revealed = true;
+        toast('🪜', 'Od tejto pomôcky sa odkrýva kód riešenia — odovzdanie bude za polovičné XP.');
+      }
+      // aktualizuj label tlačidla
+      if (reg.hintIdx >= reg.hintSteps.length) {
+        t.textContent = '💡 Pomôcky vyčerpané';
+        t.disabled = true;
+      } else {
+        t.textContent = `💡 Ďalšia pomôcka (${reg.hintIdx}/${reg.hintSteps.length})`;
+      }
+    }
     else if (a === 'ex-show-solution') {
       const box = document.querySelector(`[data-solution="${t.dataset.uid}"]`);
       box?.classList.toggle('show');

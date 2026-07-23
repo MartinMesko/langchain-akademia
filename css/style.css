@@ -548,6 +548,33 @@ body {
   white-space: pre-wrap; word-break: break-all;
 }
 .wt-sep { color: var(--ink-3); margin: 0 6px; }
+.wt-cnt {
+  display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 99px;
+  background: var(--yellow-bg); border: 1px solid rgba(228,196,106,.45);
+  color: var(--yellow-text); font-size: 11.5px; font-weight: 700; vertical-align: middle;
+}
+
+/* Rebrík pomôcok — postupne odkrývané kroky */
+.hint-ladder { display: grid; gap: 10px; }
+.hint-ladder:not(:empty) { margin-top: 12px; }
+.hint-step {
+  padding: 13px 16px; border-radius: var(--sketch-sm); background: var(--yellow-bg);
+  border: 1.5px solid rgba(228,196,106,.4); font-size: 15px; line-height: 1.6; color: var(--ink);
+  animation: viewIn .35s both;
+}
+.hint-step-title { font-weight: 700; color: var(--yellow-text); margin-bottom: 6px; font-size: 14px; letter-spacing: .2px; }
+.hint-step-body ul { margin: 8px 0 4px 18px; display: grid; gap: 5px; }
+.hint-step-body li { line-height: 1.55; }
+.hint-step-body code { font-family: var(--mono); font-size: .8em; padding: 1px 6px; border-radius: 4px; background: var(--code-bg); color: var(--code-text); white-space: pre-wrap; word-break: break-all; }
+.hint-step-body pre {
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.6; margin: 4px 0 10px;
+  background: var(--pc-editor); border-radius: 6px; padding: 10px 12px;
+  white-space: pre-wrap; word-break: break-word; color: var(--pc-text);
+}
+.hint-step-body pre .kw { color: #cc7832; font-weight: 600; } .hint-step-body pre .str { color: #6a8759; }
+.hint-step-body pre .num { color: #6897bb; } .hint-step-body pre .com { color: #808080; font-style: italic; }
+.hint-step-body pre .fn { color: #ffc66d; } .hint-step-body pre .builtin { color: #8888c6; }
+.hint-step-body pre .dec { color: #bbb529; } .hint-step-body pre .self { color: #94558d; } .hint-step-body pre .fstr { color: #cc7832; }
 
 .hint-kostra pre {
   font-family: var(--mono); font-size: 12.5px; line-height: 1.6; margin-top: 8px;
