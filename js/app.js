@@ -1498,21 +1498,71 @@
     let html = `
       <div class="page-head">
         <h1>📋 Ťahák — LangChain v kocke</h1>
-        <p class="lead">Najdôležitejšie snippety z celého kurzu na jednom mieste. Klikni na 📋 a vlož rovno do PyCharmu.</p>
+        <p class="lead">Záchytné body ku každej lekcii: <b>kedy čo použiť</b> — a pod tým hotové snippety na kopírovanie.
+        Hľadaj čokoľvek (napr. „temperature", „agent", „chunk").</p>
       </div>
+      <div class="cheat-search reveal">
+        <input type="text" id="cheatFilter" placeholder="🔍 Hľadaj v ťaháku…" autocomplete="off">
+      </div>`;
+
+    // ── 1) Kedy čo použiť — rozhodovačky po lekciách ──
+    const CH = window.LESSON_CHEATS || {};
+    COURSE.sections.forEach(sec => {
+      const lekcie = sec.lessons.filter(lid => CH[lid]);
+      if (!lekcie.length) return;
+      html += `<div data-cheat-block>
+        <div class="dash-section-title reveal"><span>${sec.icon} ${sec.title}</span><span class="line"></span></div>`;
+      lekcie.forEach(lid => {
+        const l = COURSE.lessons[lid];
+        html += `
+        <div class="cl-card reveal" data-cheat-card>
+          <div class="cl-head">
+            <span class="cl-ico">${l.icon}</span>
+            <h3>Lekcia ${l.num} — ${l.title.split('—')[0].split(' - ')[0].trim()}</h3>
+            <a class="lesson-chip" data-route href="#/lesson/${lid}">Otvoriť lekciu →</a>
+          </div>
+          <div class="cl-rows">
+            ${CH[lid].map(r => `
+            <div class="cl-row">
+              <div class="cl-kedy">${r[0]}</div>
+              <div class="cl-pouzi">${r[1]}</div>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+
+    // ── 2) Snippety na kopírovanie ──
+    html += `<div data-cheat-block>
+      <div class="dash-section-title reveal"><span>⌨️ Snippety na kopírovanie</span><span class="line"></span></div>
       <div class="cheat-grid">`;
     window.CHEATSHEET.forEach(c => {
       const cid = 'code' + (++codeUid);
       CODE_STORE[cid] = c.code;
       html += `
-        <div class="cheat-card reveal">
+        <div class="cheat-card reveal" data-cheat-card>
           <div class="cheat-card-head"><span class="cc-ico">${c.icon}</span>${c.title}
             <button class="pc-copy-btn" data-action="copy-code" data-code="${cid}" style="margin-left:auto">📋</button>
           </div>
           <pre>${highlightPython(c.code)}</pre>
         </div>`;
     });
-    setView(html + '</div>');
+    html += `</div></div>`;
+    setView(html);
+
+    // fulltextový filter cez karty aj bloky
+    const input = document.getElementById('cheatFilter');
+    input?.addEventListener('input', () => {
+      const q = input.value.toLowerCase().trim();
+      document.querySelectorAll('[data-cheat-card]').forEach(card => {
+        card.style.display = !q || card.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+      document.querySelectorAll('[data-cheat-block]').forEach(block => {
+        const any = [...block.querySelectorAll('[data-cheat-card]')].some(c => c.style.display !== 'none');
+        block.style.display = any ? '' : 'none';
+      });
+    });
   }
 
   /* ----------------------------------------------------------

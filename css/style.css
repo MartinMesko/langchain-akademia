@@ -616,6 +616,35 @@ body {
 .cheat-card pre { padding: 14px 16px; font-family: var(--mono); font-size: 12px; line-height: 1.62; overflow-x: auto; color: var(--pc-text); background: var(--pc-editor); margin: 0; }
 
 /* ============================================================
+   ŤAHÁK — „KEDY ČO POUŽIŤ" (záchytné body lekcií)
+   ============================================================ */
+.cheat-search { margin: 4px 0 10px; }
+.cheat-search input {
+  width: 100%; max-width: 460px; padding: 10px 16px; border-radius: var(--sketch-sm);
+  background: var(--panel); border: 2px solid var(--line); color: var(--ink);
+  font-family: var(--font); font-size: 16px; outline: none; transition: border .2s;
+}
+.cheat-search input:focus { border-color: var(--accent); }
+.cheat-search input::placeholder { color: var(--ink-3); }
+
+.cl-card { margin: 14px 0; border-radius: var(--sketch); background: var(--panel); border: 2px solid var(--line); overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.cl-card:nth-of-type(even) { border-radius: var(--sketch-2); }
+.cl-card:hover { transform: translateY(-2px) rotate(-.2deg); box-shadow: var(--shadow); }
+.cl-head { display: flex; align-items: center; gap: 11px; padding: 13px 18px; border-bottom: 2px dashed var(--line-soft); }
+.cl-ico { font-size: 22px; line-height: 1; }
+.cl-head h3 { font-family: var(--font-hand); font-size: 22px; font-weight: 700; color: var(--ink); flex: 1; line-height: 1.15; }
+.cl-rows { padding: 6px 18px 12px; }
+.cl-row { display: grid; grid-template-columns: minmax(180px, 38%) 1fr; gap: 14px; padding: 9px 2px; border-top: 1.5px dashed var(--line-soft); align-items: start; }
+.cl-row:first-child { border-top: none; }
+.cl-kedy { font-size: 15px; font-weight: 700; color: var(--yellow-text); line-height: 1.45; }
+.cl-kedy::before { content: '❓ '; }
+.cl-pouzi { font-size: 15.5px; color: var(--ink); line-height: 1.55; }
+.cl-pouzi code { font-family: var(--mono); font-size: .8em; padding: 1px 6px; border-radius: 4px; background: var(--code-bg); color: var(--code-text); white-space: nowrap; }
+@media (max-width: 700px) {
+  .cl-row { grid-template-columns: 1fr; gap: 4px; }
+}
+
+/* ============================================================
    PROJEKT (CAPSTONE)
    ============================================================ */
 .cap-step { margin: 14px 0; border-radius: var(--sketch); background: var(--panel); border: 2px solid var(--line); overflow: hidden; transition: border-color .25s; }
