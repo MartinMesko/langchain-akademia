@@ -680,8 +680,23 @@
         <div class="ex-success ${solved ? 'show' : ''}" data-success="${uid}">🎉 Presne tak! Poradie je správne.</div>`;
     }
     if (ex.t === 'write') {
+      // ✅ Presná špecifikácia: checklist vygenerovaný z kontrolných tokenov —
+      // používateľ presne vidí, ČO musí jeho kód obsahovať.
+      const chips = (ex.must || [])
+        .map(alts => `<code>${escapeHtml(alts[0])}</code>`)
+        .join('<span class="wt-sep">·</span>');
+      // 🪜 „Ako začať": prvá polovica riešenia (max 3 riadky) ako odrazový mostík
+      const riadky = (ex.solution || '').split('\n').filter(l => l.trim().length);
+      const kostra = riadky.slice(0, Math.min(3, Math.max(1, Math.floor(riadky.length / 2)))).join('\n');
       return `
-        <div class="ex-intro" style="padding:0 0 12px">${ex.task}</div>
+        <div class="write-task">
+          <div class="wt-label">🎯 Zadanie</div>
+          <div class="wt-text">${ex.task}</div>
+          <div class="wt-check">
+            <span class="wt-check-label">✅ Skontrolovať prejde, keď kód obsahuje:</span>
+            <span class="wt-chips">${chips}</span>
+          </div>
+        </div>
         <div class="write-editor">
           <div class="write-editor-head">🐍 cvicenie.py — napíš svoj kód</div>
           <textarea class="write-area" data-write="${uid}" spellcheck="false">${escapeHtml(ex.starter || '')}</textarea>
@@ -689,9 +704,14 @@
         <div class="ex-actions">
           <button class="btn btn-primary btn-sm" data-action="ex-check-write" data-uid="${uid}" ${solved ? 'disabled' : ''}>✓ Skontrolovať</button>
           <button class="btn btn-ghost btn-sm" data-action="ex-hint" data-uid="${uid}">💡 Pomôcka</button>
+          <button class="btn btn-ghost btn-sm" data-action="ex-hint2" data-uid="${uid}">🪜 Ako začať</button>
           <button class="btn btn-ghost btn-sm" data-action="ex-show-solution" data-uid="${uid}">👁 Ukázať riešenie</button>
         </div>
-        <div class="hint-box" data-hint="${uid}">💡 ${ex.hint || ''}</div>
+        <div class="hint-box" data-hint="${uid}"><b>💡 Pomôcka:</b> ${ex.hint || ''}</div>
+        <div class="hint-box hint-kostra" data-hint2="${uid}">
+          <b>🪜 Začni takto</b> (prvé riadky riešenia — zvyšok doplň podľa zadania a checklistu):
+          <pre>${highlightPython(kostra)}</pre>
+        </div>
         <div class="write-feedback" data-feedback="${uid}"></div>
         <div class="solution-box" data-solution="${uid}">
           <div class="sol-label">Vzorové riešenie</div>
@@ -1648,6 +1668,7 @@
     else if (a === 'ex-check-blanks') checkBlanks(t.dataset.uid, t);
     else if (a === 'ex-reveal-blanks') revealBlanks(t.dataset.uid);
     else if (a === 'ex-hint') document.querySelector(`[data-hint="${t.dataset.uid}"]`)?.classList.toggle('show');
+    else if (a === 'ex-hint2') document.querySelector(`[data-hint2="${t.dataset.uid}"]`)?.classList.toggle('show');
     else if (a === 'ex-show-solution') {
       const box = document.querySelector(`[data-solution="${t.dataset.uid}"]`);
       box?.classList.toggle('show');
