@@ -1103,7 +1103,10 @@
       <div class="lesson-top">
         <a href="#/dashboard" data-route style="color:inherit;text-decoration:none">🏠 Dashboard</a>
         <span class="crumb-sep">›</span><span>${sec.icon} ${sec.title}</span>
-        <span class="crumb-sep">›</span><span>${typeof l.num === 'string' ? '🐍 Prípravná lekcia ' + l.num : (l.section === 's5' ? '🤖 Bonus · Lekcia ' + l.num : 'Lekcia ' + l.num + '/23')}</span>
+        <span class="crumb-sep">›</span><span>${typeof l.num === 'string' ? '🐍 Prípravná lekcia ' + l.num
+          : l.section === 's5' ? '🤖 Bonus · Lekcia ' + l.num
+          : l.section === 's6' ? '🛡️ Bezpečnosť · Lekcia ' + l.num
+          : 'Lekcia ' + l.num + '/23'}</span>
         <span style="flex:1"></span>
         <span class="lesson-meta-chip">⏱ ${l.duration}</span>
         <span class="lesson-meta-chip">⚡ +${50 + (l.quiz?.length || 0) * 10 + allExercises(l).reduce((a, e) => a + (e.xp || 20), 0)} XP v hre</span>

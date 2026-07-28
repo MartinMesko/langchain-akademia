@@ -246,6 +246,60 @@ window.LESSON_CHEATS = {
     ['Minimum produkcie', '<code>/health</code> endpoint + štruktúrované logy bez PII + zafixované verzie (==).'],
   ],
 
+  l32: [
+    ['Ideme nasadzovať — čo prejsť?', 'OWASP Top 10 for LLM Apps 2025 (LLM01–LLM10) ako checklist: ku každému bodu jedna veta „ako to riešim".'],
+    ['Vstup prepíše moje inštrukcie', 'LLM01 Prompt Injection — riziko č. 1, celá lekcia 34.'],
+    ['Agent má práva, čo nepotrebuje', 'LLM06 Excessive Agency → least privilege + human-in-the-loop.'],
+    ['Výstup modelu ide do SQL/HTML/shellu', 'LLM05 Improper Output Handling — ber ho ako nedôveryhodný vstup.'],
+    ['Ktokoľvek môže nahrať dokument do RAG', 'LLM04 + LLM08 — sanitácia, metadáta, izolácia (lekcia 36).'],
+    ['Niekto mi môže vyžrať kredit', 'LLM10 Unbounded Consumption → rate limit, max_tokens, rozpočet.'],
+  ],
+
+  l33: [
+    ['Staviam agenta, nie chatbota', 'Použi rebríček ASI01–ASI10 (OWASP for Agentic Applications) — agent koná, nie len odpovedá.'],
+    ['Agent má trvalú pamäť', 'ASI06 Memory Poisoning — pamäť rieš ako typované dáta: allowlist kľúčov, limit dĺžky, značka pôvodu.'],
+    ['Nástroj vie spraviť nezvratnú škodu', 'ASI02 Tool Misuse → human-in-the-loop (LangGraph interrupt) + allowlist.'],
+    ['Kedy interrupt ÁNO', 'Mazanie, platby, e-maily, produkčné dáta, prvý beh nového nástroja.'],
+    ['Kedy interrupt NIE', 'Čítanie, vyhľadávanie, výpočty — inak si ľudia zvyknú klikať naslepo (ASI09).'],
+    ['Agenti si posielajú správy', 'ASI07 — over identitu a obsah; jeden agent môže klamať druhému.'],
+  ],
+
+  l34: [
+    ['Dá sa injection úplne opraviť?', 'Nie — model má jeden kanál pre dáta aj inštrukcie. Rieši sa OBMEDZENÍM DOSAHU.'],
+    ['Appka číta cudzí obsah (PDF, web)', 'Nepriama injection — ohranič obsah značkami, označ ako dáta, zakáž vykonávať pokyny z neho.'],
+    ['Kam NEDÁVAŤ načítaný text', 'Nikdy do system správy — tam patria len tvoje pravidlá.'],
+    ['Lacná prvá vrstva', 'Moderation API + heuristika vzorov; potom LLM klasifikátor (max_tokens=3).'],
+    ['Keď filter zlyhá', 'Rozhoduje dosah: least privilege, allowlist, izolácia dát, kontrola výstupu.'],
+    ['Ako viem, že obrana funguje?', 'Sada útočných promptov ako regresný test — po každej zmene promptu.'],
+  ],
+
+  l35: [
+    ['Tri princípy LangChainu', 'Limit permissions · Anticipate misuse · Defense in depth.'],
+    ['Argumenty nástroja od modelu', 'Ber ich ako vstup z internetu: Pydantic <code>args_schema</code> + <code>field_validator</code>.'],
+    ['Nástroj číta súbory', 'Allowlist prípon, zákaz <code>..</code> a <code>/</code>, kontrola <code>is_relative_to</code>, strop dĺžky výstupu.'],
+    ['Model má spúšťať kód', 'Najlepšie vôbec. Ak áno → sandbox (Docker bez siete, gVisor/Firecracker, hosťovaný sandbox), nikdy <code>exec</code> v hlavnom procese. Pozor na CVE-2025-68613 (REPL RCE).'],
+    ['Kde presadiť allowlist a limity', 'V kóde, ktorý nástroje spúšťa — nie v prompte. Model nástroje nespúšťa, spúšťa ich tvoj dispatcher.'],
+    ['Nový nástroj do agenta', 'Otázka: aký je blast radius pri 100 zlých volaniach?'],
+  ],
+
+  l36: [
+    ['Indexujem cudzie dokumenty', 'Sanitizuj vzory pokynov, doplň metadáta (source, tenant, dôvera), oddeľ kolekcie podľa dôvery.'],
+    ['Viac zákazníkov v jednej DB', 'Metadata filter <code>{"tenant": …}</code> — tenant ber z overenej session, NIKDY z promptu.'],
+    ['Pripájam MCP server', 'Prečítaj popisy nástrojov (tool poisoning) a ulož ich odtlačok — zmena = rug pull.'],
+    ['Ako detegovať rug pull', 'Hash mena+popisu+schémy pri štarte a porovnanie s uloženým stavom.'],
+    ['Dodávateľský reťazec', 'Pripnuté verzie (<code>==</code>), minimum závislostí, izolované MCP servery, sledovanie CVE.'],
+    ['Koľko chunkov do promptu', 'Aj <code>k</code> je bezpečnostný parameter — viac kontextu = väčší povrch na únik a injection.'],
+  ],
+
+  l37: [
+    ['Kam s kľúčmi', 'Prostredie/secret manager; mimo gitu a Docker image; oddelený dev/prod; rotácia.'],
+    ['Tracing v produkcii', 'Posiela obsah promptov von — pri PII maskuj, vzorkuj alebo vypni.'],
+    ['Ochrana rozpočtu', 'Rate limit na používateľa + denný strop + limit dĺžky vstupu + <code>max_tokens</code>.'],
+    ['Čo logovať pri agentoch', 'Audit rozhodnutí: ktoré nástroje, aké argumenty, čo vrátili, čo bolo zamietnuté (bez PII).'],
+    ['Ako často testovať bezpečnosť', 'Bezpečnostná eval sada v CI — pri poklese skóre sa nasadenie zastaví.'],
+    ['Uniknul kľúč — prvý krok', 'Okamžite rotovať, až potom vyšetrovať rozsah z logov.'],
+  ],
+
   l31: [
     ['Portfólio', '3 vyleštené NASADENÉ projekty s príbehovým README > 30 tutoriálových klonov.'],
     ['CV formulka', 'Výsledok + technológie: „Postavil som X (LangChain + Chroma + FastAPI), nasadené v Dockeri" — nie zoznam pojmov.'],
