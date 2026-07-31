@@ -46,7 +46,7 @@
   }
 
   const state = Object.assign({
-    xp: 0, done: [], quiz: {}, ex: {}, badges: [], examBest: 0, examPassed: false, cap: [], proj: [], projReq: {}
+    xp: 0, done: [], quiz: {}, ex: {}, badges: [], examBest: 0, examPassed: false, cap: [], proj: [], projReq: {}, choice: {}
   }, loadState());
 
   // ── Záloha postupu: export do súboru / import zo súboru ──
@@ -75,7 +75,7 @@
         if (typeof obj.examBest === 'number') state.examBest = obj.examBest;
         if (typeof obj.examPassed === 'boolean') state.examPassed = obj.examPassed;
         ['done', 'badges', 'cap', 'proj'].forEach(k => { if (Array.isArray(obj[k])) state[k] = obj[k]; });
-        ['quiz', 'ex', 'projReq'].forEach(k => { if (obj[k] && typeof obj[k] === 'object') state[k] = obj[k]; });
+        ['quiz', 'ex', 'projReq', 'choice'].forEach(k => { if (obj[k] && typeof obj[k] === 'object') state[k] = obj[k]; });
         persist();
         buildSidebar(); updateTopbar(); route();
         confettiBurst(120);
@@ -145,6 +145,10 @@
       test: () => state.proj.length >= 15 },
     { id: 'b_p30', icon: '🚢', name: 'Kapitán portfólia', desc: 'Dokonči všetkých 30 tréningových projektov.',
       test: () => state.proj.length >= window.PROJECTS.items.length },
+    { id: 'b_c50', icon: '🎯', name: 'Ostrý klikač', desc: 'Vyrieš 50 cvičení v sekcii Klikací kód.',
+      test: () => Object.values(state.choice).filter(v => v === 'ok').length >= 50 },
+    { id: 'b_c150', icon: '🏹', name: 'Majster výberu', desc: 'Vyrieš 150 cvičení v sekcii Klikací kód.',
+      test: () => Object.values(state.choice).filter(v => v === 'ok').length >= 150 },
   ];
   function sectionDone(sid) {
     const sec = COURSE.sections.find(s => s.id === sid);
@@ -292,6 +296,7 @@
         <a class="side-lesson" data-route href="#/exam"><span class="side-check">${state.examPassed ? '✓' : '🏁'}</span> Záverečný test</a>
         <a class="side-lesson" data-route href="#/project"><span class="side-check">${state.cap.length >= window.CAPSTONE.steps.length ? '✓' : '🏗️'}</span> Záverečný projekt</a>
         <a class="side-lesson" data-route href="#/practice"><span class="side-check">💼</span> Tréningové projekty <span class="side-lesson-dur">${state.proj.length}/${window.PROJECTS.items.length}</span></a>
+        <a class="side-lesson" data-route href="#/choice"><span class="side-check">🎯</span> Klikací kód <span class="side-lesson-dur">${Object.values(state.choice).filter(v => v === 'ok').length}/${LESSON_ORDER.length * 10}</span></a>
         <a class="side-lesson" data-route href="#/cheatsheet"><span class="side-check">📋</span> Ťahák</a>
         <a class="side-lesson" data-route href="#/badges"><span class="side-check">🏆</span> Odznaky <span class="side-lesson-dur">${state.badges.length}/${BADGES.length}</span></a>
         <button class="side-lesson side-btn" data-action="export-progress"><span class="side-check">💾</span> <span class="side-lesson-title">Exportovať postup</span></button>
@@ -1246,6 +1251,11 @@
         <p>Praktické zadania od prvého chainu po nasadený RAG systém — od ⭐ po ⭐⭐⭐.</p>
         <div class="sc-meta">${state.proj.length}/${window.PROJECTS.items.length} hotových →</div>
       </a>
+      <a class="special-card reveal" data-route href="#/choice">
+        <div class="sc-icon">🎯</div><h3>Klikací kód</h3>
+        <p>Predvyplnený kód so skrytými časťami — namiesto písania vyberáš zo 4 možností. 10 cvičení ku každej lekcii.</p>
+        <div class="sc-meta">${Object.values(state.choice).filter(v => v === 'ok').length}/${LESSON_ORDER.length * 10} vyriešených →</div>
+      </a>
       <a class="special-card reveal" data-route href="#/badges">
         <div class="sc-icon">🏆</div><h3>Odznaky</h3>
         <p>Zbieraj ocenenia za pokrok, kvízy, cvičenia aj špeciálne výkony.</p>
@@ -1729,6 +1739,164 @@
   }
 
   /* ----------------------------------------------------------
+     VIEW: KLIKACÍ KÓD (výber zo 4 možností)
+     ---------------------------------------------------------- */
+  const CHOICE_XP = 10;
+  const CH_CACHE = {};   // lekcia -> vygenerované cvičenia (stabilné počas session)
+
+  function choiceFor(lid) {
+    if (!CH_CACHE[lid]) CH_CACHE[lid] = window.CHOICE.buildForLesson(lid, COURSE.lessons[lid]);
+    return CH_CACHE[lid];
+  }
+  function choiceDone(lid) {
+    return choiceFor(lid).filter((_, i) => state.choice[`c:${lid}:${i}`] === 'ok').length;
+  }
+
+  function renderChoiceOverview() {
+    const spolu = Object.values(state.choice).filter(v => v === 'ok').length;
+    const max = LESSON_ORDER.length * 10;
+    let html = `
+      <div class="page-head">
+        <h1>🎯 Klikací kód</h1>
+        <p class="lead">Predvyplnený kód, v ktorom sú <b>skryté práve tie časti, ktoré lekcia učí</b>.
+        Nič nepíšeš — pri každej medzere vyberáš zo <b>4 možností</b> (jedna je správna).
+        Ideálne na rýchle opakovanie a na rozlíšenie podobných API. Za každé cvičenie <b>+${CHOICE_XP} XP</b>.</p>
+      </div>
+      <div class="exam-progress reveal">
+        <div class="exam-progress-bar"><div class="exam-progress-fill" style="width:${Math.round(spolu / max * 100)}%"></div></div>
+        <div class="exam-progress-label"><span>${spolu} / ${max} cvičení vyriešených</span><span>Odznaky: 🎯 50 · 🏹 150</span></div>
+      </div>`;
+
+    COURSE.sections.forEach(sec => {
+      html += `<div class="dash-section-title reveal"><span>${sec.icon} ${sec.title}</span><span class="line"></span></div>
+        <div class="ch-grid">`;
+      sec.lessons.forEach(lid => {
+        const l = COURSE.lessons[lid];
+        const hotovo = choiceDone(lid);
+        const pct = Math.round(hotovo / 10 * 100);
+        html += `
+          <a class="ch-card reveal ${hotovo === 10 ? 'ch-full' : ''}" data-route href="#/choice/${lid}">
+            <span class="ch-ico">${l.icon}</span>
+            <span class="ch-name">${typeof l.num === 'string' ? l.num : l.num}. ${l.title.split('—')[0].split(' - ')[0].trim()}</span>
+            <span class="ch-prog">${hotovo}/10</span>
+            <span class="ch-bar"><i style="width:${pct}%"></i></span>
+          </a>`;
+      });
+      html += `</div>`;
+    });
+    setView(html);
+  }
+
+  function renderChoiceLesson(lid) {
+    const l = COURSE.lessons[lid];
+    if (!l) return renderChoiceOverview();
+    const cvicenia = choiceFor(lid);
+    const idx = LESSON_ORDER.indexOf(lid);
+    const dalsia = LESSON_ORDER[idx + 1];
+
+    let html = `
+      <div class="lesson-top">
+        <a href="#/choice" data-route style="color:inherit;text-decoration:none">🎯 Klikací kód</a>
+        <span class="crumb-sep">›</span><span>${l.icon} ${l.title}</span>
+        <span style="flex:1"></span>
+        <span class="lesson-meta-chip" id="chCount">${choiceDone(lid)}/${cvicenia.length} hotových</span>
+        <a class="lesson-meta-chip" data-route href="#/lesson/${lid}" style="text-decoration:none">📖 Otvoriť lekciu</a>
+      </div>
+      <div class="page-head" style="margin-top:14px">
+        <h1>🎯 ${typeof l.num === 'string' ? 'Lekcia ' + l.num : 'Lekcia ' + l.num} — vyber správny kód</h1>
+        <p class="lead">Pri každej medzere rozbaľ ponuku a vyber správnu možnosť. Potom klikni na <b>✓ Skontrolovať</b>.</p>
+      </div>`;
+
+    cvicenia.forEach((cv, ci) => {
+      const key = `c:${lid}:${ci}`;
+      const hotove = state.choice[key] === 'ok';
+      const uid = `ch_${lid}_${ci}`;
+      const kod = highlightWithBlanks(cv.kod, n => {
+        const g = cv.gaps[n];
+        if (!g) return '';
+        const opts = g.moznosti.map(m =>
+          `<option value="${escapeHtml(m)}" ${hotove && m === g.spravna ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('');
+        return `<select class="gap-select ${hotove ? 'ok' : ''}" data-ch="${uid}" data-n="${n}" ${hotove ? 'disabled' : ''}>
+                  <option value="">— vyber —</option>${opts}
+                </select>`;
+      });
+      html += `
+        <div class="ex-card reveal ${hotove ? 'solved' : ''}" id="${uid}" data-ch-card="${key}">
+          <div class="ex-head">
+            <span class="ex-type-badge">🎯 Vyber možnosť</span>
+            <h3>${cv.nazov}</h3>
+            <span class="ex-solved-flag">✓ Vyriešené (+${CHOICE_XP} XP)</span>
+          </div>
+          <div class="ex-intro">Doplň ${cv.gaps.length} ${cv.gaps.length === 1 ? 'medzeru' : cv.gaps.length < 5 ? 'medzery' : 'medzier'} výberom z ponuky.</div>
+          <div class="ex-body">
+            <div class="blanks-code">${kod}</div>
+            <div class="ex-actions">
+              <button class="btn btn-primary btn-sm" data-action="ch-check" data-ch="${uid}" ${hotove ? 'disabled' : ''}>✓ Skontrolovať</button>
+              <button class="btn btn-ghost btn-sm" data-action="ch-hint" data-ch="${uid}">💡 Pomôcka</button>
+            </div>
+            <div class="hint-box" data-chhint="${uid}"><b>💡 Pomôcka:</b> ${cv.hint || 'Porovnaj možnosti s tým, čo si videl v lekcii.'}</div>
+            <div class="write-feedback" data-chfb="${uid}"></div>
+            <div class="ex-success ${hotove ? 'show' : ''}" data-chok="${uid}">🎉 Správne! Presne takto to patrí.</div>
+          </div>
+        </div>`;
+    });
+
+    html += `<div class="lesson-nav">
+        <a class="btn btn-ghost" data-route href="#/choice">← Späť na prehľad</a>
+        ${dalsia ? `<a class="btn btn-primary" data-route href="#/choice/${dalsia}" style="margin-left:auto">Ďalšia lekcia →</a>` : ''}
+      </div>`;
+    setView(html);
+  }
+
+  function checkChoice(uid, btn) {
+    const card = document.getElementById(uid);
+    const key = card.dataset.chCard;
+    const [, lid, ci] = key.split(':');
+    const cv = choiceFor(lid)[+ci];
+    const selects = [...card.querySelectorAll('.gap-select')];
+    const fb = card.querySelector(`[data-chfb="${uid}"]`);
+
+    let prazdne = 0, zle = 0;
+    selects.forEach(s => {
+      const g = cv.gaps[+s.dataset.n];
+      s.classList.remove('ok', 'bad');
+      if (!s.value) { prazdne++; return; }
+      const spravne = (g.alts || [g.spravna]).some(a => a.trim() === s.value.trim());
+      s.classList.add(spravne ? 'ok' : 'bad');
+      if (!spravne) zle++;
+    });
+
+    if (prazdne) {
+      fb.className = 'write-feedback show miss';
+      fb.innerHTML = `🔎 Ešte ${prazdne === 1 ? 'jedna medzera nie je vyplnená' : `${prazdne} medzery nie sú vyplnené`} — vyber možnosť pri každej.`;
+      return;
+    }
+    if (zle) {
+      fb.className = 'write-feedback show miss';
+      fb.innerHTML = `❌ ${zle === 1 ? 'Jedna voľba je nesprávna' : `${zle} voľby sú nesprávne`} (červené). Skús inú možnosť — alebo si vypýtaj 💡 Pomôcku.`;
+      return;
+    }
+
+    fb.className = 'write-feedback show good';
+    fb.innerHTML = '✅ Všetky voľby sedia!';
+    card.querySelector(`[data-chok="${uid}"]`).classList.add('show');
+    card.classList.add('solved');
+    selects.forEach(s => s.disabled = true);
+    btn.disabled = true;
+
+    if (state.choice[key] !== 'ok') {
+      state.choice[key] = 'ok';
+      persist();
+      addXP(CHOICE_XP, btn);
+      confettiBurst(40);
+      const cnt = document.getElementById('chCount');
+      if (cnt) cnt.textContent = `${choiceDone(lid)}/${choiceFor(lid).length} hotových`;
+      checkBadges();
+      buildSidebar();
+    }
+  }
+
+  /* ----------------------------------------------------------
      VIEW: ODZNAKY + ŤAHÁK
      ---------------------------------------------------------- */
   function renderBadges() {
@@ -1845,6 +2013,7 @@
       case 'exam': renderExam(); break;
       case 'project': renderProject(); break;
       case 'practice': renderPractice(); break;
+      case 'choice': parts[1] ? renderChoiceLesson(parts[1]) : renderChoiceOverview(); break;
       case 'badges': renderBadges(); break;
       case 'cheatsheet': renderCheatsheet(); break;
       default: renderDashboard();
@@ -1984,6 +2153,8 @@
         if (demo && DEMOS[demo.id] && !DEMOS[demo.id].played) setTimeout(() => playDemo(demo.id), 350);
       }
     }
+    else if (a === 'ch-check') checkChoice(t.dataset.ch, t);
+    else if (a === 'ch-hint') document.querySelector(`[data-chhint="${t.dataset.ch}"]`)?.classList.toggle('show');
     else if (a === 'demo-play') playDemo(t.dataset.demo);
     else if (a === 'demo-skip') {
       const d = DEMOS[t.dataset.demo];
