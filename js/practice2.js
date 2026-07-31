@@ -1280,7 +1280,7 @@ qa_prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}"),
 ])
 print("QA prompt pripravený")`),
-    W('Zlož celú架 architektúru',
+    W('Zlož celú architektúru',
       'Spoj všetko: <code>create_retrieval_chain(ha_retriever, create_stuff_documents_chain(model, qa_prompt))</code> a vypíš potvrdenie.',
       `from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain

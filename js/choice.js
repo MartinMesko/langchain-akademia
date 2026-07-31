@@ -274,38 +274,8 @@
       hotove.push({ nazov, kod, gaps, hint, zdroj });
     };
 
-    // 1) Z existujúcich „Doplň kód" cvičení (kód aj medzery sú hotové)
-    (lesson.exercises || []).forEach(ex => {
-      if (ex.t !== 'blanks') return;
-      pridaj(ex.title, ex.code, ex.blanks, ex.hint, 'doplň');
-    });
-
-    // 1b) Dedikované doplnkové cvičenia (choice_extra.js)
-    ((window.CHOICE_EXTRA || {})[lessonId] || []).forEach(ex => {
-      pridaj(ex.nazov, ex.kod, ex.blanks, ex.hint, 'extra');
-    });
-
-    // 2) Z reálnych PyCharm ukážok lekcie — skryjeme kľúčové API pojmy
-    (lesson.blocks || []).forEach(b => {
-      if (hotove.length >= 10 || b.t !== 'pycharm' || b.terminal) return;
-      const subor = (b.files || []).find(f => f.active) || (b.files || [])[0];
-      if (!subor || !subor.code || subor.code.split('\n').length < 4) return;
-      // nájdi v kóde známe pojmy zo slovníka (na hraniciach slov)
-      const najdene = [];
-      VSETKY.forEach(term => {
-        if (najdene.length >= 12) return;
-        const re = new RegExp(`(?<![\\w.])${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w])`);
-        if (re.test(subor.code)) najdene.push(term);
-      });
-      if (najdene.length < 2) return;
-      const vybrane = shuffleDet(najdene, `${lessonId}:pc:${b.title || ''}`).slice(0, 3);
-      const { kod, tokeny } = vlozMedzery(subor.code, vybrane);
-      if (tokeny.length < 2) return;
-      pridaj(`Ukážka z lekcie: ${b.title || subor.name}`, kod, tokeny,
-        'Vráť sa k tejto ukážke v lekcii — kód je z nej doslova prevzatý.', 'ukážka');
-    });
-
-    // 3) Z riešení „Napíš kód" — skryjeme kľúčové prvky lekcie
+    // JEDINÝ ZDROJ: cvičenia „Napíš kód" — z ich riešení skryjeme
+    // kľúčové prvky, ktoré daná lekcia učí (podľa must tokenov).
     const write = [...(lesson.exercises || []).filter(e => e.t === 'write'),
                    ...((window.EXTRA_WRITE || {})[lessonId] || [])];
     write.forEach(ex => {
@@ -313,6 +283,8 @@
       const kandidati = (ex.must || [])
         .map(alts => (Array.isArray(alts) ? alts[0] : alts))
         .map(t => String(t).replace(/^#\d+:/, ''))
+        // dlhé tokeny (celé volania) skráť na názov funkcie pred zátvorkou
+        .map(t => (t.length > 30 && t.includes('(') ? t.slice(0, t.indexOf('(')) : t))
         .filter(jeVhodnyToken)
         .filter(t => ex.solution.includes(t));
       if (!kandidati.length) return;
