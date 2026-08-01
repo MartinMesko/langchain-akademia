@@ -300,6 +300,71 @@ window.LESSON_CHEATS = {
     ['Uniknul kľúč — prvý krok', 'Okamžite rotovať, až potom vyšetrovať rozsah z logov.'],
   ],
 
+  l38: [
+    ['Firma chce dáta v EÚ a SLA', 'Azure OpenAI — rovnaké modely, iná prevádzka: región, SLA, VNet, žiadny tréning na tvojich dátach.'],
+    ['Prepínam kód na Azure', '<code>AzureChatOpenAI(azure_deployment=…, api_version=…)</code> — zvyšok appky sa nemení.'],
+    ['DeploymentNotFound', 'Do <code>azure_deployment</code> patrí TVOJE meno nasadenia z portálu, nie názov modelu.'],
+    ['Kam nasadiť kontajner (rýchly štart)', 'Serverless: Azure Container Apps / AWS App Runner / GCP Cloud Run — škáluje aj na nulu.'],
+    ['Tajomstvá v cloude', 'Key Vault / Secrets Manager / Secret Manager — nie .env súbor na serveri.'],
+    ['Dev vs prod konfigurácia', '12-factor: jeden image, rozdiely len v env premenných.'],
+  ],
+
+  l39: [
+    ['Viac LLM volaní naraz', '<code>await asyncio.gather(*[model.ainvoke(o) for o in otazky])</code> — čas ≈ najpomalší dopyt.'],
+    ['Sync vs async metódy', 'invoke/batch/stream → <code>ainvoke</code>/<code>abatch</code>/<code>astream</code> (s await v async def).'],
+    ['Hromadné spracovanie bez rate limitu', '<code>abatch(vstupy, config={"max_concurrency": 5})</code>.'],
+    ['Odpoveď po kúskoch', '<code>async for kusok in chain.astream(...)</code> — vnímaná rýchlosť ↑.'],
+    ['Kedy async NEpomôže', 'Pri CPU výpočtoch — event loop je jedno vlákno; pomôžu procesy.'],
+    ['Úloha na minúty', 'Nie HTTP čakanie — fronta + worker + job_id, klient sa pýta na stav.'],
+  ],
+
+  l40: [
+    ['Ktorá DB na čo', 'Postgres = zdroj pravdy (+pgvector vektory), Redis = rýchla pominuteľná vrstva, Elasticsearch = fulltext/hybrid, MongoDB = JSON bez schémy.'],
+    ['Vektory bez nového systému', '<code>PGVector(embeddings=…, collection_name=…, connection=…)</code> — jedna záloha, transakcie, JOIN s biznis dátami.'],
+    ['LLM cache zadarmo', '<code>set_llm_cache(RedisCache(redis.Redis(…)))</code> — identický prompt druhýkrát = 0 tokenov.'],
+    ['Rate limit pre viac serverov', 'Redis <code>incr</code> + <code>expire</code> — atomický čítač zdieľaný všetkými kópiami appky. Je to <b>pevné okno</b> (na hranici pustí 2× limit); posuvné okno = sorted set.'],
+    ['Presné kódy produktov v RAG', 'Hybrid: BM25 + vektory (Elasticsearch natívne, alebo EnsembleRetriever).'],
+    ['Smiem to stratiť?', 'Áno → Redis. Nie → PostgreSQL. To je celé rozhodovanie.'],
+  ],
+
+  l41: [
+    ['Kde žije pipeline', 'GitHub: <code>.github/workflows/*.yml</code> · GitLab: <code>.gitlab-ci.yml</code>.'],
+    ['Poradie jobov', '<code>needs: testy</code> — zlyhanie zastaví reťaz (testy → eval → deploy).'],
+    ['Kľúče v CI', 'GitHub Secrets a vo workflow <code>secrets.OPENAI_API_KEY</code> — nikdy kľúč priamo do YAML.'],
+    ['Tag image', 'Podľa commitu (<code>github.sha</code>) — rollback = nasadenie starého tagu.'],
+    ['Prompt sa zmenil', 'Eval ako brána v pipeline — pri poklese skóre build nezbehne.'],
+    ['Produkcia s ľudským klikom', '<code>environment: production</code> + required reviewers.'],
+    ['Po nasadení', 'Smoke test na /health — neprejde → rollback.'],
+  ],
+
+  l42: [
+    ['Appka vo viacerých kópiách', 'Stateless: všetok stav v Postgres/Redis. Test: „môžem kópiu kedykoľvek zabiť?"'],
+    ['LLM API padá', 'Kaskáda: timeout → retry s backoffom+jitterom → fallback model → circuit breaker.'],
+    ['Backoff vzorec', '<code>2 ** pokus + random.random()</code> — exponenciálne + jitter proti thundering herd.'],
+    ['Klient poslal požiadavku 2×', 'Idempotency-Key — rovnaký kľúč = akcia prebehne len raz.'],
+    ['Streaming do prehliadača', 'SSE: <code>StreamingResponse(..., media_type="text/event-stream")</code>, riadky „data: …".'],
+    ['API zmluva', 'Verzuj od prvého dňa (/v1/…), 429 s Retry-After, kľúč v hlavičke (nie v URL).'],
+    ['Čo merať', 'p95 latenciu, chybovosť, cenu/deň — alerty na symptómy používateľa, nie CPU.'],
+  ],
+
+  l43: [
+    ['LangChain vs LlamaIndex', 'LangChain = orchestrácia (chainy, agenti, LangGraph); LlamaIndex = dátová/RAG vrstva (indexy, retrieval).'],
+    ['RAG na 5 riadkov', '<code>SimpleDirectoryReader → VectorStoreIndex.from_documents → as_query_engine → query</code>.'],
+    ['Citácie zdrojov', '<code>odpoved.source_nodes</code> — súbor aj skóre máš automaticky.'],
+    ['Oba naraz', 'LlamaIndex engine zabalený ako <code>@tool</code> v LangChain agentovi.'],
+    ['Neplatiť embeddingy 2×', '<code>index.storage_context.persist(persist_dir=…)</code>.'],
+    ['Firma už má jeden framework', 'Použi ten — konzistencia tímu > osobná preferencia.'],
+  ],
+
+  l44: [
+    ['Rozhodnutie medzi technológiami', 'Explicitný trade-off: čo získam, čo obetujem — v NAŠOM kontexte. Bez mínusov je to len názor.'],
+    ['Prečo sme to tak spravili?', 'ADR (pol strany): kontext → možnosti → rozhodnutie s + aj − → dôsledky. Do repa, review ako kód.'],
+    ['Vysvetlenie stakeholderovi', 'Pravidlo dôsledku: technická vec → dopad v peniazoch, čase alebo riziku.'],
+    ['Hotové = ?', 'DoD pre AI featuru: testy prešli A eval skóre ≥ prah na golden datasete.'],
+    ['AI úloha v šprinte', 'Time-box experimentu — rozpočet času namiesto presného odhadu.'],
+    ['Mentoring', 'Otázky namiesto odpovedí („čo sa stane pri 100 dokumentoch?"), bezpečné zlyhanie na stagingu, kontext namiesto príkazov.'],
+  ],
+
   l31: [
     ['Portfólio', '3 vyleštené NASADENÉ projekty s príbehovým README > 30 tutoriálových klonov.'],
     ['CV formulka', 'Výsledok + technológie: „Postavil som X (LangChain + Chroma + FastAPI), nasadené v Dockeri" — nie zoznam pojmov.'],

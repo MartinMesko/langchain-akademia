@@ -18,7 +18,10 @@
   ]);
 
   function escapeHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // aj úvodzovky — reťazec sa vkladá aj do HTML atribútov (value="…"),
+    // kde by neescapovaná " rozbila značku
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   // Jednoprechodový tokenizér — žiadne dvojité nahrádzanie

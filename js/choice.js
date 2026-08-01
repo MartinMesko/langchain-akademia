@@ -117,6 +117,60 @@
     ['else', 'otherwise', 'orelse', 'default'],
     ['tuple', 'list', 'dict', 'set'],
     ['str', 'int', 'float', 'bool'],
+    // pojmy a prepínače
+    ['RAG', 'fine-tuning', 'few-shot', 'prompt engineering'],
+    ['AI', 'ML', 'NLP', 'LLM'],
+    ['--no-cache-dir', '--no-cache', '--skip-cache', '--cache-off'],
+    // frameworky (odpovede typu „čo použiť")
+    ['LlamaIndex', 'LangChain', 'Haystack', 'Semantic Kernel'],
+    ['LangChain + LangGraph', 'LlamaIndex + LangGraph', 'LangChain + CrewAI', 'LangGraph + AutoGen'],
+    ['Redis', 'Memcached', 'Valkey', 'KeyDB'],
+    ['PostgreSQL', 'MySQL', 'MariaDB', 'SQLite'],
+    ['Elasticsearch', 'OpenSearch', 'Solr', 'Typesense'],
+    ['MongoDB', 'CouchDB', 'DynamoDB', 'Firestore'],
+    // async svet
+    ['ainvoke', 'abatch', 'astream', 'arun'],
+    ['gather', 'wait', 'collect', 'join_all'],
+    ['wait_for', 'timeout_after', 'deadline', 'limit_time'],
+    ['sleep', 'delay', 'pause', 'idle'],
+    ['Semaphore', 'Lock', 'Barrier', 'Event'],
+    ['TimeoutError', 'CancelledError', 'TimeoutException', 'DeadlineError'],
+    ['max_concurrency', 'concurrency', 'max_parallel', 'parallel_limit'],
+    // Azure
+    ['AzureChatOpenAI', 'AzureOpenAIChat', 'ChatAzureOpenAI', 'AzureGPT'],
+    ['AzureOpenAIEmbeddings', 'AzureEmbeddings', 'OpenAIAzureEmbeddings', 'AzureVectorizer'],
+    ['azure_deployment', 'deployment', 'deployment_name', 'azure_model'],
+    ['api_version', 'azure_version', 'api_ver', 'version'],
+    // databázy
+    ['PGVector', 'PostgresVector', 'PgVectorStore', 'VectorPG'],
+    ['RedisCache', 'RedisStore', 'CacheRedis', 'MemoryCache'],
+    ['incr', 'increment', 'bump', 'add_one'],
+    ['expire', 'ttl', 'expires_in', 'set_ttl'],
+    ['setex', 'set_ex', 'put_ex', 'store_ttl'],
+    ['decode', 'to_str', 'parse', 'unpack'],
+    ['collection_name', 'collection', 'table_name', 'index_name'],
+    ['connection', 'conn', 'dsn', 'connection_url'],
+    ['DATABASE_URL', 'DB_URL', 'POSTGRES_URL', 'DATABASE_DSN'],
+    // FastAPI a web
+    ['StreamingResponse', 'EventResponse', 'SSEResponse', 'ChunkedResponse'],
+    ['HTTPException', 'HttpError', 'APIException', 'RequestError'],
+    ['status_code', 'code', 'http_status', 'response_code'],
+    ['media_type', 'content_type', 'mime_type', 'response_type'],
+    ['Header', 'Cookie', 'Query', 'Body'],
+    // LlamaIndex
+    ['VectorStoreIndex', 'VectorIndex', 'StoreIndex', 'EmbeddingIndex'],
+    ['SimpleDirectoryReader', 'DirectoryReader', 'FolderLoader', 'FileReader'],
+    ['load_data', 'read_data', 'fetch_data', 'get_data'],
+    ['as_query_engine', 'as_engine', 'to_query_engine', 'make_engine'],
+    ['source_nodes', 'sources', 'citations', 'origin_nodes'],
+    ['similarity_top_k', 'top_k', 'k_results', 'max_nodes'],
+    ['response_mode', 'answer_mode', 'synth_mode', 'reply_mode'],
+    ['SentenceSplitter', 'TokenSplitter', 'WordSplitter', 'ParagraphSplitter'],
+    ['node_parser', 'parser', 'splitter', 'chunker'],
+    ['storage_context', 'context', 'storage', 'store_ctx'],
+    ['persist', 'save', 'dump', 'flush'],
+    ['persist_dir', 'save_dir', 'storage_dir', 'output_dir'],
+    ['retrieve', 'search', 'fetch', 'lookup'],
     // moduly / cesty
     ['document_loaders', 'loaders', 'file_loaders', 'readers'],
     ['text_splitters', 'splitters', 'chunkers', 'dividers'],
@@ -164,7 +218,19 @@
 
   function jadro(tok) {
     // odstráni obalové znaky, nech sa dá porovnať so slovníkom
-    return tok.replace(/^[\s."'({[]+|[\s."'):}\]]+$/g, '');
+    // (aj koncové "(", "=" a "," — tokeny typu `PGVector(` či `collection_name=`)
+    return tok.replace(/^[\s."'({[]+|[\s."'):}\]=(,]+$/g, '');
+  }
+
+  function mutacieMena(meno) {
+    // vierohodné varianty mena: async↔sync dvojičky, prefixy, plurál
+    const m = [];
+    if (/^a[a-z]/.test(meno)) m.push(meno.slice(1));          // ainvoke -> invoke
+    else m.push('a' + meno);                                   // invoke -> ainvoke
+    if (meno.startsWith('get_')) m.push(meno.slice(4));
+    else m.push('get_' + meno);
+    m.push(meno + '_all', meno + 's', meno.replace(/_/g, ''));
+    return m.filter(x => x && x !== meno);
   }
 
   function obal(tok, hodnota) {
@@ -197,6 +263,21 @@
       });
     }
 
+    // 2b) parameter s číselnou hodnotou (temperature=1.2, k=4): mení sa hodnota
+    if (out.length < 3) {
+      const mHodnota = /^(.+=)(-?\d+(?:\.\d+)?)(\W*)$/.exec(correct);
+      if (mHodnota) {
+        const [, pred, cis, po] = mHodnota;
+        const n = parseFloat(cis);
+        const des = cis.includes('.');
+        [n + (des ? 0.5 : 1), n === 0 ? (des ? 0.5 : 1) : n * 2, Math.max(0, n - (des ? 0.5 : 1))]
+          .forEach(v => {
+            const kandidat = pred + (des ? v.toFixed(1) : Math.round(v)) + po;
+            if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
+          });
+      }
+    }
+
     // 3) operátory a drobné znaky
     if (out.length < 3) {
       const OPER = { '|': ['&', '>>', '+'], '+': ['-', '*', '&'], '..': ['.', '~', '//'],
@@ -209,8 +290,60 @@
       });
     }
 
-    // 4) tvarovo podobné pojmy z celého slovníka
-    if (out.length < 3) {
+    // 3a2) tokeny s reťazcovým literálom (os.getenv("DATABASE_URL"):
+    //      mení sa obsah literálu, nie okolitý kód
+    const sLiteralom = /^(.*["'])([A-Za-z_][\w./-]*)(["']?.*)$/.exec(correct);
+    if (out.length < 3 && sLiteralom) {
+      const [, pred, obsah, po] = sLiteralom;
+      const poolL = POOLS.find(p => p.includes(obsah));
+      const kandidati = poolL ? poolL.filter(x => x !== obsah) : mutacieMena(obsah);
+      shuffleDet(kandidati, seedStr + ':l').forEach(x => {
+        const kandidat = pred + x + po;
+        if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
+      });
+    }
+
+    // 3b) zložené tokeny s bodkou (model.ainvoke·, asyncio.gather·):
+    //     mení sa IBA časť za poslednou bodkou — rozptylovač ostane vierohodný
+    const sBodkou = /^(.*\.)([A-Za-z_]\w*)(\W*)$/.exec(correct);
+    if (out.length < 3 && sBodkou) {
+      const [, pred, meno, po] = sBodkou;
+      const poolM = POOLS.find(p => p.includes(meno));
+      const kandidati = poolM ? poolM.filter(x => x !== meno) : mutacieMena(meno);
+      shuffleDet(kandidati, seedStr + ':d').forEach(x => {
+        const kandidat = pred + x + po;
+        if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
+      });
+    }
+
+    // 3c) viacslovné tokeny (async def …, class X(…)): mení sa kľúčové slovo
+    if (out.length < 3 && /\s/.test(correct.trim())) {
+      const KLUCE = {
+        'async def': ['def', 'await def', 'async func'],
+        'await': ['async', 'yield', 'return'],
+        'async': ['await', 'sync', 'defer'],
+        'def': ['func', 'fn', 'define'],
+        'class': ['type', 'struct', 'object'],
+        'for': ['while', 'each', 'loop'],
+        'return': ['yield', 'give', 'output'],
+        'import': ['include', 'require', 'use'],
+        'not in': ['in', 'is not', 'not is'],
+        'is not': ['not is', 'is', '!='],
+      };
+      const t = correct.trim();
+      const kluc = Object.keys(KLUCE)
+        .filter(k => t === k || t.startsWith(k + ' '))
+        .sort((a, b) => b.length - a.length)[0];      // najdlhšia zhoda ("async def" pred "async")
+      if (kluc) {
+        KLUCE[kluc].forEach(nahrada => {
+          const kandidat = correct.replace(kluc, nahrada);
+          if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
+        });
+      }
+    }
+
+    // 4) tvarovo podobné pojmy z celého slovníka (len pre jednoduché tokeny)
+    if (out.length < 3 && !/\s/.test(correct.trim()) && !sBodkou) {
       const camel = /^[A-Z]/.test(j);
       const snake = /_/.test(j);
       const podobne = VSETKY.filter(x =>
@@ -218,6 +351,17 @@
         Math.abs(x.length - j.length) <= 12);
       shuffleDet(podobne, seedStr + ':s').forEach(x => {
         const kandidat = obal(correct, x);
+        if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
+      });
+    }
+
+    // 4b) doplnenie mutáciami tej istej „hlavy" — vždy tvarovo blízke originálu
+    if (out.length < 3) {
+      const cielM = sBodkou ? sBodkou[2] : j;
+      const obalPred = sBodkou ? sBodkou[1] : '';
+      const obalPo = sBodkou ? sBodkou[3] : '';
+      mutacieMena(cielM).forEach(x => {
+        const kandidat = sBodkou ? obalPred + x + obalPo : obal(correct, x);
         if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
       });
     }

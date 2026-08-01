@@ -1111,6 +1111,7 @@
         <span class="crumb-sep">›</span><span>${typeof l.num === 'string' ? '🐍 Prípravná lekcia ' + l.num
           : l.section === 's5' ? '🤖 Bonus · Lekcia ' + l.num
           : l.section === 's6' ? '🛡️ Bezpečnosť · Lekcia ' + l.num
+          : l.section === 's7' ? '🏗️ Produkcia · Lekcia ' + l.num
           : 'Lekcia ' + l.num + '/23'}</span>
         <span style="flex:1"></span>
         <span class="lesson-meta-chip">⏱ ${l.duration}</span>
