@@ -279,11 +279,11 @@ Bot: Čau!` },
     { t: 'h', x: 'Objekty a bodka — čo znamená model.invoke()' },
     { t: 'p', x: 'V kurze stále uvidíš zápis <code>niečo.niečo</code>. Kľúč k pochopeniu: veľa vecí v Pythone sú <strong>objekty</strong> — „inteligentné spotrebiče", ktoré majú <strong>tlačidlá (metódy — volajú sa so zátvorkami)</strong> a <strong>displeje (atribúty — bez zátvoriek)</strong>. Bodka znamená „siahni do objektu":' },
     { t: 'pycharm', title: 'objekty.py — bodková notácia', files: [
-      { name: 'objekty.py', active: true, code: `text = "LangChain Akadémia"
+      { name: 'objekty.py', active: true, code: `text = "AI Engineer Academy"
 
 # METÓDY — tlačidlá objektu, volajú sa SO zátvorkami:
 print(text.upper())        # prepni na veľké písmená
-print(text.replace("Akadémia", "kurz"))
+print(text.replace("Academy", "kurz"))
 
 # takto to bude vyzerať s AI modelom (lekcia 2):
 #   model = ChatOpenAI(model="gpt-4o-mini")   <- vyrob objekt
@@ -293,8 +293,8 @@ print(text.replace("Akadémia", "kurz"))
 # ATRIBÚTY — displeje, ČÍTAJÚ sa BEZ zátvoriek:
 import math
 print(math.pi)             # hodnota, nie akcia => bez zátvoriek` }
-    ], output: `LANGCHAIN AKADÉMIA
-LangChain kurz
+    ], output: `AI ENGINEER ACADEMY
+AI Engineer kurz
 3.141592653589793` },
     { t: 'box', kind: 'key', title: 'Zlaté pravidlo bodky', x: '<code>objekt.metóda()</code> = <strong>urob niečo</strong> (akcia, so zátvorkami) · <code>objekt.atribút</code> = <strong>prečítaj hodnotu</strong> (bez zátvoriek). Preto <code>model.invoke("...")</code> má zátvorky (akcia: spýtaj sa modelu) a <code>odpoved.content</code> nemá (len čítaš text odpovede).' },
     { t: 'p', x: 'A odkiaľ sa objekty berú? Z <strong>tried</strong> — „výrobných foriem". Zápis <code>ChatOpenAI(model="gpt-4o-mini")</code> znamená: „výrobná forma ChatOpenAI, vyrob mi jeden kus s týmto nastavením". Triedy spoznáš podľa VeľkýchPísmenNaZačiatku. Posledný symbol, ktorý v kurze stretneš, je <strong>dekorátor</strong> <code>@tool</code> — „nálepka" nad funkciou, ktorá jej pridá schopnosti (z obyčajnej funkcie spraví nástroj pre AI). Detailne v lekcii 8.' }

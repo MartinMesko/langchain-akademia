@@ -1,5 +1,5 @@
 /* ============================================================
-   LANGCHAIN AKADÉMIA — aplikačná logika
+   AI ENGINEER ACADEMY — aplikačná logika
    ============================================================ */
 (function () {
   'use strict';
@@ -11,6 +11,7 @@
   /* ----------------------------------------------------------
      STAV + PERZISTENCIA
      ---------------------------------------------------------- */
+  // pozor: kľúč zámerne nemeníme ani pri premenovaní appky — inak by ľudia prišli o postup
   const STORE_KEY = 'lc-akademia-v1';
 
   // Bezpečné úložisko — appka NESMIE spadnúť, ak je localStorage blokovaný
@@ -40,7 +41,7 @@
     if (storageWarned) return;
     storageWarned = true;
     setTimeout(() => toast('⚠️',
-      'Postup sa v tomto režime nedá uložiť. Spusti appku <b>ikonou „LangChain Akadémia" na ploche</b> — ' +
+      'Postup sa v tomto režime nedá uložiť. Spusti appku <b>ikonou „AI Engineer Academy" na ploche</b> — ' +
       'tam sa postup automaticky ukladá. Medzitým si ho môžeš zálohovať cez <b>💾 Exportovať postup</b> v menu.'
     ), 250);
   }
@@ -62,10 +63,10 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'langchain-akademia-postup.json';
+      a.download = 'ai-engineer-academy-postup.json';
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1500);
-      toast('💾', 'Postup exportovaný do súboru <b>langchain-akademia-postup.json</b>.');
+      toast('💾', 'Postup exportovaný do súboru <b>ai-engineer-academy-postup.json</b>.');
     } catch (e) {
       toast('⚠️', 'Export sa nepodaril.');
     }
@@ -114,7 +115,7 @@
     { xp: 800,  name: 'Tool Master',      icon: '🧰' },
     { xp: 1300, name: 'RAG Architekt',    icon: '📚' },
     { xp: 2000, name: 'Agent Commander',  icon: '🤖' },
-    { xp: 2800, name: 'LangChain Guru',   icon: '🦜' },
+    { xp: 2800, name: 'AI Inžinier',      icon: '🎓' },
   ];
   function levelIndex(xp) {
     let i = 0;
@@ -362,7 +363,7 @@
     <div class="pycharm reveal" id="${uid}">
       <div class="pc-titlebar">
         <div class="pc-dots"><span class="pc-dot r"></span><span class="pc-dot y"></span><span class="pc-dot g"></span></div>
-        <div class="pc-title">langchain_kurz – <b>${escapeHtml(f.name)}</b> — ${escapeHtml(block.title || 'PyCharm')}</div>
+        <div class="pc-title">ai_projekt – <b>${escapeHtml(f.name)}</b> — ${escapeHtml(block.title || 'PyCharm')}</div>
         <div class="pc-copy"><button class="pc-copy-btn" data-action="pc-copy" data-pc="${uid}">📋 Kopírovať kód</button></div>
       </div>
       <div class="pc-menubar">
@@ -376,7 +377,7 @@
       <div class="pc-body">
         <div class="pc-project">
           <div class="pc-project-head">📂 PROJECT</div>
-          <div class="pc-tree-item"><span class="ti">📁</span> langchain_kurz</div>
+          <div class="pc-tree-item"><span class="ti">📁</span> ai_projekt</div>
           <div class="pc-tree-item" style="padding-left:24px; opacity:.55"><span class="ti">📁</span> .venv</div>
           ${block.files.map((file, i) => `
             <div class="pc-tree-item ${i === activeIdx ? 'active-file' : ''}" data-action="pc-tab" data-pc="${uid}" data-i="${i}" style="padding-left:24px; cursor:pointer">
@@ -400,7 +401,7 @@
       ${block.note ? `<div class="pc-note">💡 ${block.note}</div>` : ''}
       <div class="pc-statusbar">
         <span>${block.terminal ? 'zsh' : 'Run ⌄'}</span>
-        <div class="sb-right"><span>UTF-8</span><span>4 spaces</span><span>Python 3.12 (langchain_kurz)</span></div>
+        <div class="sb-right"><span>UTF-8</span><span>4 spaces</span><span>Python 3.12 (ai_projekt)</span></div>
       </div>
     </div>`;
   }
@@ -421,7 +422,7 @@
     root.querySelectorAll('.pc-tree-item[data-action]').forEach((t, ti) => t.classList.toggle('active-file', ti === i));
     root.querySelector('.pc-editor').innerHTML = editorHTML(f.code);
     root.querySelector('.pc-run-config-name').textContent = f.name;
-    root.querySelector('.pc-title').innerHTML = `langchain_kurz – <b>${escapeHtml(f.name)}</b>`;
+    root.querySelector('.pc-title').innerHTML = `ai_projekt – <b>${escapeHtml(f.name)}</b>`;
   }
 
   function pcRun(uid) {
@@ -441,7 +442,7 @@
       const path = document.createElement('span');
       path.className = 'con-path';
       const fname = pc.files[pc.active].name;
-      path.textContent = `/Users/student/PycharmProjects/langchain_kurz/.venv/bin/python ${fname}`;
+      path.textContent = `/Users/student/PycharmProjects/ai_projekt/.venv/bin/python ${fname}`;
       body.appendChild(path);
       body.appendChild(document.createTextNode('\n'));
     }
@@ -460,7 +461,7 @@
       const tail = document.createElement('span');
       if (pc.terminal) {
         tail.className = 'con-dim';
-        tail.textContent = '\n\n(.venv) langchain_kurz % ';
+        tail.textContent = '\n\n(.venv) ai_projekt % ';
       } else {
         tail.className = 'con-ok';
         tail.textContent = '\n\nProcess finished with exit code 0';
@@ -1194,8 +1195,8 @@
 
     let html = `
     <div class="hero">
-      <div class="hero-badge"><span class="dot"></span> Podľa kurzu Skillmea · 23 kapitol · 2 h 39 min · Marek Kučák</div>
-      <h1>LangChain <span class="grad-text">Akadémia</span><br>Inteligentné aplikácie s ChatGPT</h1>
+      <div class="hero-badge"><span class="dot"></span> ${LESSON_ORDER.length} lekcií · 5 playgroundov · 980 cvičení · po slovensky</div>
+      <h1>AI Engineer <span class="grad-text">Academy</span><br>Od prvého promptu po produkciu</h1>
       <div class="hero-type">Nauč sa stavať <span class="typed" id="typeTarget"></span><span class="caret"></span></div>
       <div class="hero-actions">
         ${nextLesson
@@ -2353,7 +2354,7 @@
   function renderCheatsheet() {
     let html = `
       <div class="page-head">
-        <h1>📋 Ťahák — LangChain v kocke</h1>
+        <h1>📋 Ťahák — celý kurz v kocke</h1>
         <p class="lead">Záchytné body ku každej lekcii: <b>kedy čo použiť</b> — a pod tým hotové snippety na kopírovanie.
         Hľadaj čokoľvek (napr. „temperature", „agent", „chunk").</p>
       </div>
@@ -2665,6 +2666,6 @@
   route();
   probeStorage();
   if (!state.done.length && !location.hash) {
-    setTimeout(() => toast('🦜', 'Vitaj v LangChain Akadémii! Začni prvou lekciou. 🚀'), 900);
+    setTimeout(() => toast('🎓', 'Vitaj v AI Engineer Academy! Začni prvou lekciou. 🚀'), 900);
   }
 })();

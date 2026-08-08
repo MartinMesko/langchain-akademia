@@ -1,16 +1,17 @@
-# 🦜🔗 LangChain Akadémia
+# 🎓 AI Engineer Academy
 
-Interaktívna výučbová aplikácia pokrývajúca **kompletný obsah kurzu
-„LangChain: Inteligentné aplikácie s ChatGPT"** (Skillmea, Marek Kučák) —
-všetkých 23 kapitol — plus rozsiahlu nadstavbu na zamestnateľnosť:
+Interaktívna výučbová aplikácia v slovenčine — **od prvého promptu po produkčného
+AI inžiniera**. Prevedie ťa celou cestou: Python základy, LangChain a LangGraph,
+RAG, agenti, bezpečnosť, produkčný backend, Docker aj Git.
+
 **49 lekcií v 9 sekciách**, 490 cvičení „Napíš kód", 490 klikacích cvičení
-a simulovaný Docker Playground.
+a **päť simulátorov** (Docker, Git, Redis, SQL, LangGraph) s 50 misiami.
 
 🌐 Online: **https://martinmesko.github.io/langchain-akademia/**
 
 ## Spustenie
 
-**Dvojklik na ikonu „LangChain Akadémia" na ploche.** 🦜
+**Dvojklik na ikonu „AI Engineer Academy" na ploche.** 🎓
 Spustí malý lokálny server a otvorí akadémiu v prehliadači na `http://127.0.0.1:8765`.
 
 > **Prečo server a nie len otvorenie súboru?** Tvoj postup (XP, dokončené lekcie, odznaky…)
@@ -23,11 +24,11 @@ overeného vývojára) — daj **pravý klik → Open → Open**. Server beží 
 ďalšie kliknutie na ikonu už len otvorí appku.
 
 **Záložné spustenia** (keby ikona niekedy nešla):
-- dvojklik na `Spustit-LangChain-Akademia.command` v priečinku projektu (otvorí Terminál), alebo
+- dvojklik na `Spustit-AI-Engineer-Academy.command` v priečinku projektu (otvorí Terminál), alebo
 - ručne: `cd Langchain_5 && python3 -m http.server 8765` a otvor `http://127.0.0.1:8765`.
 
 ### Záloha postupu
-V bočnom menu sú tlačidlá **💾 Exportovať postup** (stiahne `langchain-akademia-postup.json`)
+V bočnom menu sú tlačidlá **💾 Exportovať postup** (stiahne `ai-engineer-academy-postup.json`)
 a **⬆️ Importovať postup** (načíta zálohu späť) — hodí sa pri prenose na iný počítač alebo
 ako poistka. Ak by úložisko niekedy nebolo dostupné, appka nespadne a upozorní ťa.
 
@@ -42,16 +43,16 @@ ako poistka. Ak by úložisko niekedy nebolo dostupné, appka nespadne a upozorn
 | 🐳 **Docker do hĺbky (3 lekcie)** | obrazy vs kontajnery a ich životný cyklus, Dockerfile s cache vrstiev a multi-stage buildom, volumes, siete a Compose |
 | 🔍 **Rozbory kódu riadok po riadku** | ku kľúčovému príkladu každej lekcie karta, ktorá ľudskou rečou vysvetlí každý dôležitý riadok — pre menej znalých Pythonu |
 | 🐍 **Python okienka** | fialové boxy vysvetľujúce jazykové koncepty (slovníky, lambda, dekorátory, `\|` operátor, walrus…) presne tam, kde sa prvýkrát objavia |
-| 🖥️ **40 PyCharm simulácií** | editor s Darcula témou, project tree, taby, syntax highlighting a **spustiteľná Run konzola** so streamovaným výstupom (zelené ▶) |
-| 🧠 **97 kvízových otázok** | s okamžitým vysvetlením |
-| 🏋️ **66 cvičení** | dopĺňanie kódu, zoraďovanie pipeline, písanie vlastného kódu s validáciou, pomôckami a riešeniami |
+| 🖥️ **93 PyCharm simulácií** | editor s Darcula témou, project tree, taby, syntax highlighting a **spustiteľná Run konzola** so streamovaným výstupom (zelené ▶) |
+| 🧠 **226 kvízových otázok** | s okamžitým vysvetlením |
+| 🏋️ **143 cvičení priamo v lekciách** | dopĺňanie kódu (49), zoraďovanie pipeline (48) a písanie vlastného kódu (46) — tie „write" cvičenia sú súčasťou 490 cvičení „Napíš kód" |
 | 🏁 **Záverečný test** | 24 otázok, potrebných 80 % |
 | 🏗️ **Záverečný projekt** | Firemný AI asistent v 8 krokoch (RAG + pamäť + Streamlit + LangSmith + LangServe) |
 | 💼 **30 tréningových projektov** | praktické zadania od ⭐ (prvý chain, ~20 min) po ⭐⭐⭐ (nasadený RAG systém s API) — s požiadavkami, pomôckami, bonusmi a XP za dokončenie |
 | 🧪 **Päť Playgroundov (50 misií)** | **simulátory priamo v prehliadači** — píšeš skutočné príkazy a dostávaš realistický výstup vrátane chýb. Každá misia sa kontroluje podľa **skutočného stavu enginu**, nie podľa textu príkazu:<br>🐳 **Docker** (12) — run, ps, logs, exec, build, volume, network, compose + editor Dockerfile<br>🌱 **Git** (12) — skutočný graf commitov, staging, vetvy a **merge konflikty**, reset vs revert, stash, remote<br>⚡ **Redis** (8) — SET/GET, TTL ktoré naozaj odtikáva, čítače, zoznamy, hashe, sety<br>🗃️ **SQL** (10) — mini PostgreSQL: WHERE, JOIN, GROUP BY, HAVING, LIKE, INSERT/UPDATE/DELETE, EXPLAIN a indexy<br>🕸️ **LangGraph** (8) — postavíš graf uzlov a **vidíš, ako ním putuje stav**: vetvenie, cykly aj zastavenie na človeka |
 | 🎯 **Klikací kód (490 cvičení)** | predvyplnený kód so skrytými kľúčovými časťami — namiesto písania vyberáš pri každej medzere zo 4 možností (10 cvičení ku každej lekcii, generované z riešení „Napíš kód") |
 | 📋 **Ťahák** | „kedy čo použiť" pre všetkých 49 lekcií + karty s kľúčovými snippetmi na kopírovanie |
-| 🎮 **Gamifikácia** | XP, levely, 15 odznakov, konfety, progress ringy — všetko sa ukladá do localStorage |
+| 🎮 **Gamifikácia** | XP, levely, 20 odznakov, konfety, progress ringy — všetko sa ukladá do localStorage |
 
 ## Ovládanie
 

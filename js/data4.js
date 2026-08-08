@@ -63,7 +63,7 @@ if otazka := st.chat_input("Napíš správu…"):
 
     st.session_state.historia.append(HumanMessage(content=otazka))
     st.session_state.historia.append(AIMessage(content=odpoved))` }
-    ], output: `(.venv) langchain_kurz % streamlit run app.py
+    ], output: `(.venv) ai_projekt % streamlit run app.py
 
   You can now view your Streamlit app in your browser.
 

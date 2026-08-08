@@ -1,6 +1,6 @@
 /* ============================================================
    OBSAH KURZU — Sekcie + Lekcie 1–5 (Základy LangChain)
-   Podľa kurzu: LangChain — Inteligentné aplikácie s ChatGPT (Skillmea)
+   Sekcia s1 — Základy LangChain
    ============================================================ */
 window.COURSE = {
   sections: [
@@ -54,12 +54,12 @@ window.COURSE.lessons.l1 = {
       '<strong>OpenAI účet</strong> — na <code>platform.openai.com</code> si vygeneruješ API kľúč (potrebný malý kredit, ~5 $ vystačí na celý kurz)'
     ]},
     { t: 'h', x: 'Krok 1: Nový projekt v PyCharme' },
-    { t: 'p', x: 'Otvor PyCharm a klikni na <strong>New Project</strong>. Pomenuj ho napríklad <code>langchain_kurz</code>. PyCharm automaticky ponúkne vytvorenie <strong>virtuálneho prostredia</strong> (venv) — nechaj túto voľbu zapnutú. Po potvrdení sa vytvorí priečinok projektu a v ňom skrytý priečinok <code>.venv</code>.' },
+    { t: 'p', x: 'Otvor PyCharm a klikni na <strong>New Project</strong>. Pomenuj ho napríklad <code>ai_projekt</code>. PyCharm automaticky ponúkne vytvorenie <strong>virtuálneho prostredia</strong> (venv) — nechaj túto voľbu zapnutú. Po potvrdení sa vytvorí priečinok projektu a v ňom skrytý priečinok <code>.venv</code>.' },
     { t: 'box', kind: 'info', title: 'Prečo virtuálne prostredie?', x: 'Venv je <strong>izolovaná „krabička" s knižnicami</strong> len pre tento projekt. Keď nainštaluješ LangChain do venv, neovplyvní to ostatné projekty ani systémový Python. Každý projekt tak môže mať vlastné verzie knižníc — bez konfliktov. V praxi je venv štandard, bez ktorého sa nezaobíde žiadny tím.' },
     { t: 'h', x: 'Krok 2: Inštalácia knižníc' },
     { t: 'p', x: 'V spodnej lište PyCharmu otvor záložku <strong>Terminal</strong> (PyCharm v ňom automaticky aktivuje tvoje venv — spoznáš to podľa <code>(.venv)</code> na začiatku riadku) a spusti inštaláciu:' },
     { t: 'pycharm', title: 'Terminal — inštalácia knižníc', terminal: true, files: [
-      { name: 'Terminal', code: `(.venv) langchain_kurz % pip install langchain langchain-openai python-dotenv` }
+      { name: 'Terminal', code: `(.venv) ai_projekt % pip install langchain langchain-openai python-dotenv` }
     ], output: `Collecting langchain
   Downloading langchain-0.3.25-py3-none-any.whl (1.0 MB)
 Collecting langchain-openai
@@ -91,7 +91,7 @@ else:
     print("Kľúč sa nenašiel — skontroluj súbor .env")` }
     ], output: `API kľúč úspešne načítaný!
 Začína sa: sk-proj-Ab...` },
-    { t: 'box', kind: 'tip', title: 'Štruktúra projektu', x: 'Po setupu by tvoj projekt mal vyzerať takto: <code>langchain_kurz/</code> obsahuje <code>.venv/</code> (knižnice), <code>.env</code> (tajný kľúč) a <code>main.py</code> (kód). Presne túto štruktúru uvidíš v ľavom paneli PyCharmu počas celého kurzu.' }
+    { t: 'box', kind: 'tip', title: 'Štruktúra projektu', x: 'Po setupu by tvoj projekt mal vyzerať takto: <code>ai_projekt/</code> obsahuje <code>.venv/</code> (knižnice), <code>.env</code> (tajný kľúč) a <code>main.py</code> (kód). Presne túto štruktúru uvidíš v ľavom paneli PyCharmu počas celého kurzu.' }
   ],
   quiz: [
     { q: 'Prečo vytvárame pre projekt virtuálne prostredie (venv)?',
