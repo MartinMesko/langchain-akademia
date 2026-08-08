@@ -117,6 +117,99 @@
     ['else', 'otherwise', 'orelse', 'default'],
     ['tuple', 'list', 'dict', 'set'],
     ['str', 'int', 'float', 'bool'],
+    // Dockerfile inštrukcie a mená kontajnerov (samostatne stojace)
+    ['COPY', 'ADD', 'MOVE', 'PUT'],
+    ['FROM', 'BASE', 'IMAGE', 'USE'],
+    ['RUN', 'EXEC', 'SHELL', 'DO'],
+    ['CMD', 'START', 'ENTRY', 'LAUNCH'],
+    ['WORKDIR', 'CD', 'DIR', 'CHDIR'],
+    ['EXPOSE', 'PORT', 'PUBLISH', 'OPEN'],
+    ['ENV', 'SET', 'VAR', 'CONST'],
+    ['USER', 'RUNAS', 'ACCOUNT', 'LOGIN'],
+    ['db', 'web', 'api', 'cache'],
+    ['web', 'api', 'srv', 'front'],
+    ['nginx', 'apache', 'caddy', 'traefik'],
+    // Docker: celé tokeny, ktoré sa v cvičeniach opakujú
+    ['docker run', 'docker start', 'docker create', 'docker exec'],
+    ['docker ps', 'docker list', 'docker top', 'docker show'],
+    ['docker ps -a', 'docker ps -A', 'docker ps -all', 'docker ps -x'],
+    ['docker images', 'docker image', 'docker imgs', 'docker img ls'],
+    ['docker pull nginx', 'docker get nginx', 'docker fetch nginx', 'docker download nginx'],
+    ['docker build', 'docker make', 'docker create', 'docker compile'],
+    ['docker logs', 'docker log', 'docker output', 'docker tail'],
+    ['docker exec', 'docker run-in', 'docker enter', 'docker attach'],
+    ['docker stop', 'docker halt', 'docker kill-soft', 'docker pause'],
+    ['docker rm', 'docker delete', 'docker remove', 'docker drop'],
+    ['docker rm -f', 'docker rm -force', 'docker rm --now', 'docker rm -k'],
+    ['docker system prune', 'docker prune', 'docker clean', 'docker gc'],
+    ['docker volume create', 'docker volume add', 'docker volume new', 'docker create volume'],
+    ['docker volume ls', 'docker volumes', 'docker volume list', 'docker vol ls'],
+    ['docker volume rm', 'docker volume delete', 'docker volume drop', 'docker rm volume'],
+    ['docker network create', 'docker net create', 'docker network add', 'docker create network'],
+    ['docker network ls', 'docker networks', 'docker net ls', 'docker network list'],
+    ['docker compose up', 'docker compose start', 'docker compose run', 'docker compose launch'],
+    ['docker compose down', 'docker compose stop', 'docker compose kill', 'docker compose rm'],
+    ['docker compose ps', 'docker compose status', 'docker compose ls', 'docker compose show'],
+    ['docker compose logs', 'docker compose log', 'docker compose tail', 'docker compose out'],
+    ['docker restart', 'docker reboot', 'docker reload', 'docker bounce'],
+    ['docker inspect', 'docker info', 'docker describe', 'docker detail'],
+    // Docker: prepínače a hodnoty
+    ['-d', '-b', '-D', '--bg'],
+    ['--rm', '--auto-rm', '--clean', '--delete'],
+    ['-f', '-F', '--now', '-y'],
+    ['--build', '--rebuild', '--make', '--fresh'],
+    ['-p 8080:80', '-p 80:8080', '-P 8080:80', '-p 8080/80'],
+    ['-p 9000:80', '-p 80:9000', '-p 9000/80', '-P 9000:80'],
+    ['-p 9001:80', '-p 80:9001', '-p 9001/80', '-P 9001:80'],
+    ['-p 8000:8000', '-p 8000', '-P 8000:8000', '-p 8000/8000'],
+    ['8080:80', '80:8080', '8080:8080', '80:80'],
+    ['--name web', '-name web', '--title web', '--id web'],
+    ['--name db', '-name db', '--title db', '--id db'],
+    ['--name w1', '-name w1', '--title w1', '--id w1'],
+    ['--name w2', '-name w2', '--title w2', '--id w2'],
+    ['-w /app', '-W /app', '--workdir=/app', '-c /app'],
+    ['--network moja-siet', '-network moja-siet', '--net=moja-siet', '--link moja-siet'],
+    ['--no-cache-dir', '--no-cache', '--skip-cache', '--cache-off'],
+    ['-e POSTGRES_PASSWORD', '-E POSTGRES_PASSWORD', '--env-file POSTGRES_PASSWORD', '-p POSTGRES_PASSWORD'],
+    ['-v dbdata:/var/lib/postgresql/data', '-v /var/lib/postgresql/data:dbdata',
+     '-V dbdata:/var/lib/postgresql/data', '--vol dbdata:/var/lib/postgresql/data'],
+    // Dockerfile inštrukcie a hodnoty
+    ['FROM python:3.12-slim', 'FROM python:latest', 'FROM python:3.12-alpine', 'BASE python:3.12-slim'],
+    ['python:3.12-slim', 'python:3.12-alpine', 'python:latest', 'python:3.12-full'],
+    ['WORKDIR /app', 'WORKDIR ./app', 'CD /app', 'DIR /app'],
+    ['/app', '/srv', '/code', '/usr/src/app'],
+    ['EXPOSE 8000', 'EXPOSE 8080', 'PORT 8000', 'PUBLISH 8000'],
+    ['8000', '8080', '3000', '5000'],
+    ['CMD [', 'RUN [', 'START [', 'ENTRY ['],
+    ['RUN pip install', 'CMD pip install', 'EXEC pip install', 'INSTALL pip'],
+    ['COPY . .', 'COPY .', 'COPY ./', 'MOVE . .'],
+    ['COPY requirements.txt', 'COPY requirements', 'ADD requirements.txt', 'GET requirements.txt'],
+    ['COPY --from=build', 'COPY --stage=build', 'COPY --src=build', 'FROM --copy=build'],
+    ['AS build', 'AS builder-stage', 'NAME build', 'STAGE build'],
+    ['RUN useradd', 'RUN adduser-new', 'USER useradd', 'CREATE useradd'],
+    ['USER appka', 'RUNAS appka', 'SETUSER appka', 'AS appka'],
+    ['ENV PORT=8000', 'ENV PORT 8080', 'SET PORT=8000', 'VAR PORT=8000'],
+    ['python:latest', 'python:newest', 'python:current', 'python:head'],
+    ['hello-world', 'helloworld', 'hello_world', 'docker-hello'],
+    ['postgres:16', 'postgres:latest', 'postgres:16-alpine', 'postgresql:16'],
+    ['redis:7', 'redis:latest', 'redis:7-alpine', 'redis-server:7'],
+    ['moja-appka:1.0', 'moja-appka:latest', 'moja-appka:v1', 'moja_appka:1.0'],
+    ['-t moja-appka:1.0', '-t moja-appka', '--tag=moja-appka:1.0', '-n moja-appka:1.0'],
+    ['-t moja-appka:slim', '-t moja-appka', '--tag=moja-appka:slim', '-n moja-appka:slim'],
+    // Compose YAML
+    ['services:', 'containers:', 'apps:', 'stack:'],
+    ['ports:', 'expose:', 'publish:', 'porty:'],
+    ['volumes:', 'mounts:', 'disks:', 'storage:'],
+    ['environment:', 'env:', 'variables:', 'config:'],
+    ['depends_on:', 'requires:', 'after:', 'needs:'],
+    ['image: redis:7', 'image: redis:latest', 'img: redis:7', 'from: redis:7'],
+    ['dbdata:/var/lib/postgresql/data', '/var/lib/postgresql/data:dbdata',
+     'dbdata:/var/lib/postgres/data', 'dbdata:/data/postgresql'],
+    // .dockerignore
+    ['.git', '.github', '.gitignore', '.gitmodules'],
+    ['.venv', 'venv', '.virtualenv', '.env-venv'],
+    ['__pycache__', '_pycache_', '__cache__', '__pyc__'],
+    ['.env', '.environment', '.env-local', 'env'],
     // pojmy a prepínače
     ['RAG', 'fine-tuning', 'few-shot', 'prompt engineering'],
     ['AI', 'ML', 'NLP', 'LLM'],
@@ -337,6 +430,27 @@
       if (kluc) {
         KLUCE[kluc].forEach(nahrada => {
           const kandidat = correct.replace(kluc, nahrada);
+          if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
+        });
+      }
+
+      // 3c2) inak mení POSLEDNÚ časť tokenu — prefix (inštrukcia, prepínač) ostáva.
+      //      Pokrýva `FROM python:3.12-slim`, `EXPOSE 8000`, `-p 8080:80`, `--name web`…
+      if (out.length < 3) {
+        const medzera = correct.lastIndexOf(' ');
+        const prefix = correct.slice(0, medzera + 1);
+        const chvost = correct.slice(medzera + 1);
+        const poolCh = POOLS.find(p => p.includes(chvost));
+        let kandidati = [];
+        if (poolCh) kandidati = poolCh.filter(x => x !== chvost);
+        else if (/^-?\d+$/.test(chvost)) {
+          const n = parseInt(chvost, 10);
+          kandidati = [n + 1, n * 2, Math.max(0, n - 1)].map(String);
+        } else if (chvost.length >= 2) {
+          kandidati = mutacieMena(chvost);
+        }
+        shuffleDet(kandidati, seedStr + ':ch').forEach(x => {
+          const kandidat = prefix + x;
           if (out.length < 3 && !zakazane.has(kandidat.trim()) && !out.includes(kandidat)) out.push(kandidat);
         });
       }

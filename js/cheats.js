@@ -365,6 +365,35 @@ window.LESSON_CHEATS = {
     ['Mentoring', 'Otázky namiesto odpovedí („čo sa stane pri 100 dokumentoch?"), bezpečné zlyhanie na stagingu, kontext namiesto príkazov.'],
   ],
 
+  l45: [
+    ['Obraz vs kontajner', 'Obraz = trieda (nemenná šablóna), kontajner = inštancia (bežiaci proces). Z jedného obrazu ľubovoľne veľa kontajnerov.'],
+    ['Kontajner hneď skončil', '<code>docker ps -a</code> (naozaj spadol?) → <code>docker logs &lt;meno&gt;</code> (prečo?). Rieši 9 z 10 problémov.'],
+    ['Zmizol mi po Ctrl+C', 'Bežal v popredí — chýbalo <code>-d</code>.'],
+    ['Mapovanie portu', '<code>-p HOSŤ:KONTAJNER</code>, teda „zvonku:zvnútra" (<code>-p 8080:80</code>).'],
+    ['Konfigurácia kontajnera', '<code>-e KLUC=hodnota</code> pri <code>docker run</code>.'],
+    ['Rýchle upratanie', '<code>docker rm -f &lt;meno&gt;</code> (stop+rm), <code>docker system prune -f</code> (zastavené + nepoužité obrazy).'],
+  ],
+
+  l46: [
+    ['Základný obraz', 'Vždy konkrétna verzia: <code>FROM python:3.12-slim</code>. Nikdy <code>:latest</code>.'],
+    ['Build je pomalý', 'Zlé poradie — <code>COPY requirements.txt</code> + <code>RUN pip install</code> PRED <code>COPY . .</code>.'],
+    ['Obraz je obrovský', 'slim/alpine základ, <code>.dockerignore</code>, multi-stage build (<code>COPY --from=build</code>).'],
+    ['EXPOSE vs -p', 'EXPOSE len dokumentuje; port reálne otvorí až <code>-p</code> pri <code>docker run</code>.'],
+    ['Kam s API kľúčmi', 'NIKDY do <code>ENV</code> v Dockerfile — ostanú v obraze. Až pri spustení cez <code>-e</code> alebo secret manager.'],
+    ['Bezpečný beh', '<code>RUN useradd -m appka</code> + <code>USER appka</code> — proces nebeží ako root.'],
+    ['Čo je tá bodka', '<code>docker build -t meno:tag .</code> — bodka je kontext (adresár posielaný Dockeru).'],
+  ],
+
+  l47: [
+    ['Dáta prežijú kontajner?', 'Len vo volume: <code>-v dbdata:/var/lib/postgresql/data</code>.'],
+    ['Volume vs bind mount', 'Pomenovaný volume = produkčné dáta (spravuje Docker); bind mount <code>-v ./kod:/app</code> = vývoj, vidíš zmeny hneď.'],
+    ['Kontajnery sa nevidia', 'Predvolený bridge nemá DNS podľa mena — vytvor vlastnú sieť a pripoj oba cez <code>--network</code>.'],
+    ['Adresa druhej služby', 'Meno kontajnera/služby ako hostname: <code>redis://cache:6379</code>.'],
+    ['Celý stack naraz', '<code>docker compose up -d</code> · stav <code>ps</code> · logy <code>logs -f</code> · zhodenie <code>down</code>.'],
+    ['depends_on nestačí', 'Rieši len poradie štartu, nie pripravenosť — appka musí vedieť zopakovať pripojenie.'],
+    ['Čo púšťať von', 'Iba <code>ports:</code> pri API. Databáza a cache bez portov = zvonku neviditeľné.'],
+  ],
+
   l31: [
     ['Portfólio', '3 vyleštené NASADENÉ projekty s príbehovým README > 30 tutoriálových klonov.'],
     ['CV formulka', 'Výsledok + technológie: „Postavil som X (LangChain + Chroma + FastAPI), nasadené v Dockeri" — nie zoznam pojmov.'],
