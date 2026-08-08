@@ -48,7 +48,7 @@ ako poistka. Ak by úložisko niekedy nebolo dostupné, appka nespadne a upozorn
 | 🏁 **Záverečný test** | 24 otázok, potrebných 80 % |
 | 🏗️ **Záverečný projekt** | Firemný AI asistent v 8 krokoch (RAG + pamäť + Streamlit + LangSmith + LangServe) |
 | 💼 **30 tréningových projektov** | praktické zadania od ⭐ (prvý chain, ~20 min) po ⭐⭐⭐ (nasadený RAG systém s API) — s požiadavkami, pomôckami, bonusmi a XP za dokončenie |
-| 🐳 **Docker Playground** | **simulovaný Docker engine priamo v prehliadači** — píšeš skutočné príkazy (`run`, `ps`, `logs`, `exec`, `build`, `volume`, `network`, `compose`) a dostávaš realistický výstup vrátane chýb. 12 misií od prvého kontajnera po Compose; každá sa kontroluje podľa **skutočného stavu enginu**, nie podľa textu príkazu. Súčasťou je editor Dockerfile a `docker-compose.yml` |
+| 🧪 **Päť Playgroundov (50 misií)** | **simulátory priamo v prehliadači** — píšeš skutočné príkazy a dostávaš realistický výstup vrátane chýb. Každá misia sa kontroluje podľa **skutočného stavu enginu**, nie podľa textu príkazu:<br>🐳 **Docker** (12) — run, ps, logs, exec, build, volume, network, compose + editor Dockerfile<br>🌱 **Git** (12) — skutočný graf commitov, staging, vetvy a **merge konflikty**, reset vs revert, stash, remote<br>⚡ **Redis** (8) — SET/GET, TTL ktoré naozaj odtikáva, čítače, zoznamy, hashe, sety<br>🗃️ **SQL** (10) — mini PostgreSQL: WHERE, JOIN, GROUP BY, HAVING, LIKE, INSERT/UPDATE/DELETE, EXPLAIN a indexy<br>🕸️ **LangGraph** (8) — postavíš graf uzlov a **vidíš, ako ním putuje stav**: vetvenie, cykly aj zastavenie na človeka |
 | 🎯 **Klikací kód (490 cvičení)** | predvyplnený kód so skrytými kľúčovými časťami — namiesto písania vyberáš pri každej medzere zo 4 možností (10 cvičení ku každej lekcii, generované z riešení „Napíš kód") |
 | 📋 **Ťahák** | „kedy čo použiť" pre všetkých 49 lekcií + karty s kľúčovými snippetmi na kopírovanie |
 | 🎮 **Gamifikácia** | XP, levely, 15 odznakov, konfety, progress ringy — všetko sa ukladá do localStorage |
@@ -59,6 +59,6 @@ ako poistka. Ak by úložisko niekedy nebolo dostupné, appka nespadne a upozorn
 - **Enter** v doplňovacom políčku — skontrolovať odpoveď
 - Klik na bežiacu konzolu — preskočiť animáciu výpisu
 - 🔍 v bočnom paneli — filtrovanie lekcií
-- V Docker Playgrounde: **↑/↓** — história príkazov, `help` — zoznam príkazov, `reset` — čistý engine
+- V Playgroundoch: **↑/↓** — história príkazov, `help` — zoznam príkazov, `reset` — čistý engine
 
 Postup sa ukladá automaticky v prehliadači (localStorage).

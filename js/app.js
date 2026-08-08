@@ -46,8 +46,14 @@
   }
 
   const state = Object.assign({
-    xp: 0, done: [], quiz: {}, ex: {}, badges: [], examBest: 0, examPassed: false, cap: [], proj: [], projReq: {}, choice: {}, docker: {}
+    xp: 0, done: [], quiz: {}, ex: {}, badges: [], examBest: 0, examPassed: false, cap: [], proj: [], projReq: {}, choice: {}, lab: {}
   }, loadState());
+
+  // migrácia: Docker Playground kedysi žil vo vlastnom kľúči state.docker
+  if (state.docker && typeof state.docker === 'object' && !Object.keys(state.lab).length) {
+    state.lab = { docker: state.docker };
+    delete state.docker;
+  }
 
   // ── Záloha postupu: export do súboru / import zo súboru ──
   function exportProgress() {
@@ -75,7 +81,9 @@
         if (typeof obj.examBest === 'number') state.examBest = obj.examBest;
         if (typeof obj.examPassed === 'boolean') state.examPassed = obj.examPassed;
         ['done', 'badges', 'cap', 'proj'].forEach(k => { if (Array.isArray(obj[k])) state[k] = obj[k]; });
-        ['quiz', 'ex', 'projReq', 'choice', 'docker'].forEach(k => { if (obj[k] && typeof obj[k] === 'object') state[k] = obj[k]; });
+        ['quiz', 'ex', 'projReq', 'choice', 'lab'].forEach(k => { if (obj[k] && typeof obj[k] === 'object') state[k] = obj[k]; });
+        // migrácia z verzie, kde Docker Playground žil vo vlastnom kľúči
+        if (obj.docker && typeof obj.docker === 'object' && !state.lab.docker) state.lab.docker = obj.docker;
         persist();
         buildSidebar(); updateTopbar(); route();
         confettiBurst(120);
@@ -146,7 +154,11 @@
     { id: 'b_p30', icon: '🚢', name: 'Kapitán portfólia', desc: 'Dokonči všetkých 30 tréningových projektov.',
       test: () => state.proj.length >= window.PROJECTS.items.length },
     { id: 'b_dock', icon: '🐳', name: 'Kapitán kontajnerov', desc: 'Splň všetky misie v Docker Playgrounde.',
-      test: () => Object.values(state.docker).filter(v => v === 'ok').length >= window.DOCKER_MISIE.length },
+      test: () => labHotove('docker') >= labMisie('docker').length },
+    { id: 'b_git', icon: '🌱', name: 'Pán histórie', desc: 'Splň všetky misie v Git Playgrounde.',
+      test: () => labHotove('git') >= labMisie('git').length },
+    { id: 'b_lab', icon: '🧪', name: 'Laborant', desc: 'Splň všetky misie vo všetkých piatich Playgroundoch.',
+      test: () => labSpoluHotovych() >= labSpoluMisii() },
     { id: 'b_c50', icon: '🎯', name: 'Ostrý klikač', desc: 'Vyrieš 50 cvičení v sekcii Klikací kód.',
       test: () => Object.values(state.choice).filter(v => v === 'ok').length >= 50 },
     { id: 'b_c150', icon: '🏹', name: 'Majster výberu', desc: 'Vyrieš 150 cvičení v sekcii Klikací kód.',
@@ -298,7 +310,7 @@
         <a class="side-lesson" data-route href="#/exam"><span class="side-check">${state.examPassed ? '✓' : '🏁'}</span> Záverečný test</a>
         <a class="side-lesson" data-route href="#/project"><span class="side-check">${state.cap.length >= window.CAPSTONE.steps.length ? '✓' : '🏗️'}</span> Záverečný projekt</a>
         <a class="side-lesson" data-route href="#/practice"><span class="side-check">💼</span> Tréningové projekty <span class="side-lesson-dur">${state.proj.length}/${window.PROJECTS.items.length}</span></a>
-        <a class="side-lesson" data-route href="#/docker"><span class="side-check">🐳</span> Docker Playground <span class="side-lesson-dur">${Object.values(state.docker).filter(v => v === 'ok').length}/${window.DOCKER_MISIE.length}</span></a>
+        <a class="side-lesson" data-route href="#/lab/docker"><span class="side-check">🧪</span> Playgroundy <span class="side-lesson-dur">${labSpoluHotovych()}/${labSpoluMisii()}</span></a>
         <a class="side-lesson" data-route href="#/choice"><span class="side-check">🎯</span> Klikací kód <span class="side-lesson-dur">${Object.values(state.choice).filter(v => v === 'ok').length}/${LESSON_ORDER.length * 10}</span></a>
         <a class="side-lesson" data-route href="#/cheatsheet"><span class="side-check">📋</span> Ťahák</a>
         <a class="side-lesson" data-route href="#/badges"><span class="side-check">🏆</span> Odznaky <span class="side-lesson-dur">${state.badges.length}/${BADGES.length}</span></a>
@@ -1256,10 +1268,10 @@
         <p>Praktické zadania od prvého chainu po nasadený RAG systém — od ⭐ po ⭐⭐⭐.</p>
         <div class="sc-meta">${state.proj.length}/${window.PROJECTS.items.length} hotových →</div>
       </a>
-      <a class="special-card reveal" data-route href="#/docker">
-        <div class="sc-icon">🐳</div><h3>Docker Playground</h3>
-        <p>Simulovaný Docker engine priamo v prehliadači — píš skutočné príkazy a plň 12 misií od prvého kontajnera po Compose.</p>
-        <div class="sc-meta">${Object.values(state.docker).filter(v => v === 'ok').length}/${window.DOCKER_MISIE.length} misií splnených →</div>
+      <a class="special-card reveal" data-route href="#/lab/docker">
+        <div class="sc-icon">🧪</div><h3>Playgroundy</h3>
+        <p>Päť simulátorov priamo v prehliadači — <b>Docker</b>, <b>Git</b>, <b>Redis</b>, <b>SQL</b> a <b>LangGraph</b>. Píšeš skutočné príkazy, misie sa kontrolujú podľa stavu.</p>
+        <div class="sc-meta">${labSpoluHotovych()}/${labSpoluMisii()} misií splnených →</div>
       </a>
       <a class="special-card reveal" data-route href="#/choice">
         <div class="sc-icon">🎯</div><h3>Klikací kód</h3>
@@ -1749,223 +1761,413 @@
   }
 
   /* ----------------------------------------------------------
-     VIEW: DOCKER PLAYGROUND (simulovaný terminál + misie)
+     PLAYGROUNDY (laby) — spoločný rámec pre všetky simulátory
+     Každý lab má vlastný engine a misie; UI, terminál, misie,
+     pomôcky aj ukladanie postupu sú spoločné.
      ---------------------------------------------------------- */
-  let DENG = null;                 // engine (žije počas session)
-  let DAKT = 0;                    // index aktívnej misie
-  let DSUB = 'Dockerfile';         // otvorený súbor v editore
-  let DHIST = [];                  // história príkazov pre šípky
-  let DHI = -1;
+  const LABY = {
+    docker: {
+      ikona: '🐳', titul: 'Docker Playground', cesta: '~/projekt',
+      popis: 'Celý Docker engine nasimulovaný v prehliadači — píš skutočné príkazy, plň misie. <b>Nič nepokazíš.</b>',
+      placeholder: 'napíš príkaz a stlač Enter (help = zoznam príkazov)',
+      uvod: ['Docker Playground — simulovaný engine (Docker version 27.3.1)',
+             'Napíš <b>help</b> pre zoznam príkazov, alebo rovno skús: <b>docker ps</b>'],
+      engine: () => window.DOCKER.vyrobEngine(),
+      misie: () => window.DOCKER_MISIE,
+      panel: 'subory',
+    },
+    git: {
+      ikona: '🌱', titul: 'Git Playground', cesta: '~/projekt',
+      popis: 'Skutočný graf commitov, staging, vetvy aj <b>merge konflikty</b> — a nič z toho sa nedá pokaziť.',
+      placeholder: 'napíš git príkaz a stlač Enter (help = zoznam príkazov)',
+      uvod: ['Git Playground — simulovaný git (verzia 2.47)',
+             'Napíš <b>help</b>, alebo začni: <b>git init</b>'],
+      engine: () => window.GIT.vyrobEngine(),
+      misie: () => window.GIT_MISIE,
+      panel: 'git',
+    },
+    redis: {
+      ikona: '⚡', titul: 'Redis Playground', cesta: 'redis',
+      popis: 'Ozajstné <code>redis-cli</code> správanie vrátane TTL, ktoré naozaj odtikáva.',
+      placeholder: 'napíš príkaz (napr. SET kluc hodnota) a stlač Enter · HELP = prehľad',
+      uvod: ['Redis Playground — simulovaný redis-cli (Redis 7.4)',
+             'Napíš <b>HELP</b>, alebo začni: <b>SET pozdrav ahoj</b>'],
+      engine: () => window.REDIS.vyrobEngine(),
+      misie: () => window.REDIS_MISIE,
+      panel: 'redis',
+    },
+    sql: {
+      ikona: '🗃️', titul: 'SQL Playground', cesta: 'akademia=#',
+      popis: 'Mini PostgreSQL nad dátami firemnej AI appky — píš dotazy a hneď vidíš výsledok.',
+      placeholder: 'napíš SQL dotaz a stlač Enter · HELP = prehľad · \\dt = tabuľky',
+      uvod: ['SQL Playground — mini PostgreSQL engine',
+             'Napíš <b>HELP</b>, alebo začni: <b>\\dt</b> (zoznam tabuliek)'],
+      engine: () => window.SQL.vyrobEngine(),
+      misie: () => window.SQL_MISIE,
+      panel: 'sql',
+    },
+    graph: {
+      ikona: '🕸️', titul: 'LangGraph Playground', cesta: 'graf',
+      popis: 'Postav graf uzlov a hrán a <b>sleduj, ako ním putuje stav</b> — vrátane vetvenia, cyklov a zastavenia na človeka.',
+      placeholder: 'napíš príkaz (napr. add_node klasifikuj) a stlač Enter · help = prehľad',
+      uvod: ['LangGraph Playground — krokovateľný beh grafu',
+             'Napíš <b>help</b> alebo <b>nodes</b> (zoznam uzlov), potom stavaj: <b>add_node klasifikuj</b>'],
+      engine: () => window.GRAPH.vyrobEngine(),
+      misie: () => window.GRAPH_MISIE,
+      panel: 'graf',
+    },
+  };
 
-  function dockerEngine() {
-    if (!DENG) DENG = window.DOCKER.vyrobEngine();
-    return DENG;
+  const LAB_ENG = {};        // id -> engine (žije počas session)
+  let LAB_ID = 'docker';     // aktívny lab
+  let LAB_AKT = {};          // id -> index aktívnej misie
+  let LAB_SUB = {};          // id -> otvorený súbor v editore
+  let LAB_HIST = {};         // id -> história príkazov (šípky)
+  let LAB_HI = {};
+
+  function labEngine(id) {
+    if (!LAB_ENG[id]) LAB_ENG[id] = LABY[id].engine();
+    return LAB_ENG[id];
   }
-  const dockerHotove = () => window.DOCKER_MISIE.filter(m => state.docker[m.id] === 'ok').length;
+  const labMisie = id => LABY[id].misie();
+  const labStav = id => (state.lab[id] = state.lab[id] || {});
+  const labHotove = id => labMisie(id).filter(m => labStav(id)[m.id] === 'ok').length;
+  const labSpoluHotovych = () => Object.keys(LABY).reduce((s, id) => s + labHotove(id), 0);
+  const labSpoluMisii = () => Object.keys(LABY).reduce((s, id) => s + labMisie(id).length, 0);
 
-  function renderDocker() {
-    const e = dockerEngine();
-    const misie = window.DOCKER_MISIE;
-    const hotovych = dockerHotove();
-    const m = misie[DAKT] || misie[0];
+  /* ── pravé panely ── */
+  function panelHTML(id) {
+    const e = labEngine(id), typ = LABY[id].panel;
+
+    if (typ === 'subory' || typ === 'git') {
+      const subory = e.stav.subory || {};
+      const aktualny = LAB_SUB[id] && subory[LAB_SUB[id]] !== undefined
+        ? LAB_SUB[id] : Object.keys(subory)[0];
+      LAB_SUB[id] = aktualny;
+      const grafHTML = typ === 'git' ? gitGrafHTML(e) : '';
+      return `
+        ${grafHTML}
+        <div class="dk-editor-head">📁 Súbory v projekte</div>
+        <div class="dk-taby">
+          ${Object.keys(subory).map(f => `
+            <button class="dk-tab ${f === aktualny ? 'akt' : ''}" data-action="lab-subor" data-f="${escapeHtml(f)}">${escapeHtml(f)}</button>`).join('')}
+        </div>
+        <textarea id="labFile" spellcheck="false">${escapeHtml(aktualny ? subory[aktualny] : '')}</textarea>
+        <div class="dk-editor-pata"><span id="labUlozene" class="dk-ulozene">Zmeny sa ukladajú automaticky</span></div>`;
+    }
+
+    if (typ === 'redis') {
+      const k = e.prehlad();
+      return `<div class="dk-editor-head">🔑 Kľúče v databáze <span class="lab-pocet">${k.length}</span></div>
+        ${k.length ? `<div class="lab-kluce">${k.map(x => `
+          <div class="lab-kluc">
+            <span class="lab-kluc-meno">${escapeHtml(x.kluc)}</span>
+            <span class="lab-typ lab-typ-${x.typ}">${x.typ}</span>
+            <span class="lab-kluc-nahlad">${escapeHtml(String(x.nahlad).slice(0, 40))}</span>
+            ${x.ttl !== null ? `<span class="lab-ttl" title="zostáva sekúnd">⏱ ${x.ttl}s</span>` : ''}
+          </div>`).join('')}</div>`
+          : '<div class="lab-prazdno">Databáza je prázdna.<br>Skús <code>SET pozdrav ahoj</code></div>'}
+        <div class="dk-editor-pata">Panel sa obnovuje po každom príkaze.</div>`;
+    }
+
+    if (typ === 'sql') {
+      return `<div class="dk-editor-head">🗂️ Schéma databázy</div>
+        ${e.schema().map(t => `
+          <div class="lab-tab">
+            <div class="lab-tab-hlava">${escapeHtml(t.meno)} <span class="lab-pocet">${t.riadkov}</span></div>
+            ${t.stlpce.map(s => `<div class="lab-stlpec"><code>${escapeHtml(s.meno)}</code><span>${s.typ}</span>${
+              t.indexy.includes(s.meno) ? '<span class="lab-idx" title="má index">⚡</span>' : ''}</div>`).join('')}
+          </div>`).join('')}
+        <div class="dk-editor-pata">Klikni na názov tabuľky v termináli cez <code>\\d tabuľka</code>.</div>`;
+    }
+
+    if (typ === 'graf') {
+      const v = e.vizualizacia();
+      const stavRiadky = Object.entries(v.stavGrafu);
+      return `<div class="dk-editor-head">🕸️ Graf</div>
+        ${grafSVG(v)}
+        <div class="dk-editor-head" style="margin-top:10px">📊 Stav grafu</div>
+        ${stavRiadky.length
+          ? `<div class="lab-stav">${stavRiadky.map(([k, x]) =>
+              `<div class="lab-stav-r"><code>${escapeHtml(k)}</code><span>${escapeHtml(JSON.stringify(x))}</span></div>`).join('')}</div>`
+          : '<div class="lab-prazdno">Stav je prázdny.<br>Spusti <code>invoke &lt;otázka&gt;</code></div>'}
+        ${v.caka ? '<div class="lab-caka">⏸ Beh zastavený — čaká na teba. Napíš <code>resume</code>.</div>' : ''}`;
+    }
+    return '';
+  }
+
+  /* ── graf commitov pre Git ── */
+  function gitGrafHTML(e) {
+    const g = e.graf();
+    if (!g.commity.length) {
+      return `<div class="dk-editor-head">🌳 Graf commitov</div>
+        <div class="lab-prazdno">Zatiaľ žiadny commit.<br>Skús <code>git init</code> a <code>git commit</code></div>`;
+    }
+    const posledne = g.commity.slice(-8).reverse();
+    return `<div class="dk-editor-head">🌳 Graf commitov <span class="lab-pocet">${g.commity.length}</span></div>
+      <div class="lab-commity">
+        ${posledne.map((c, i) => `
+          <div class="lab-commit ${c.head ? 'akt' : ''}">
+            <span class="lab-bod ${c.rodicia.length > 1 ? 'merge' : ''}"></span>
+            <span class="lab-sha">${c.id}</span>
+            <span class="lab-sprava">${escapeHtml(c.sprava.slice(0, 28))}</span>
+            ${c.vetvy.map(v => `<span class="lab-vetva ${v === g.HEAD.vetva ? 'head' : ''}">${escapeHtml(v)}</span>`).join('')}
+          </div>`).join('')}
+      </div>`;
+  }
+
+  /* ── SVG graf pre LangGraph ── */
+  function grafSVG(v) {
+    if (!v.uzly.length) return '<div class="lab-prazdno">Graf je prázdny.<br>Pridaj uzol: <code>add_node klasifikuj</code></div>';
+    const H = 54, W = 260;
+    const poz = {};
+    v.uzly.forEach((u, i) => { poz[u.meno] = { x: W / 2, y: 40 + i * H }; });
+    const vyska = 40 + v.uzly.length * H;
+    const hrany = [];
+    v.hrany.forEach(h => {
+      const ciele = h.podmienka ? Object.values(h.podmienka.mapa) : [h.do];
+      ciele.forEach(c => {
+        const a = poz[h.z], b = poz[c];
+        if (!a) return;
+        if (!b) {                                   // END
+          hrany.push(`<path d="M ${a.x} ${a.y + 16} L ${a.x} ${a.y + 34}" class="lab-h ${h.podmienka ? 'podm' : ''}"/>
+                      <text x="${a.x + 8}" y="${a.y + 34}" class="lab-h-t">END</text>`);
+          return;
+        }
+        const spat = b.y < a.y;
+        const d = spat
+          ? `M ${a.x + 46} ${a.y} C ${a.x + 96} ${a.y}, ${b.x + 96} ${b.y}, ${b.x + 46} ${b.y}`
+          : `M ${a.x} ${a.y + 16} L ${b.x} ${b.y - 16}`;
+        hrany.push(`<path d="${d}" class="lab-h ${h.podmienka ? 'podm' : ''} ${spat ? 'spat' : ''}"/>`);
+      });
+    });
+    return `<svg class="lab-svg" viewBox="0 0 ${W + 70} ${vyska + 16}" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="sip" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="currentColor"/></marker></defs>
+      ${hrany.join('')}
+      ${v.uzly.map(u => {
+        const p = poz[u.meno];
+        return `<g class="lab-uzol ${u.aktivny ? 'akt' : ''} ${u.vykonany ? 'hot' : ''}">
+          <rect x="${p.x - 62}" y="${p.y - 15}" width="124" height="30" rx="8"
+                fill="${u.vykonany ? u.farba : 'transparent'}" stroke="${u.farba}" stroke-width="2"/>
+          <text x="${p.x}" y="${p.y + 4}" class="lab-uzol-t" fill="${u.vykonany ? '#1e1f22' : u.farba}">${escapeHtml(u.meno)}</text>
+          ${u.pocet > 1 ? `<circle cx="${p.x + 54}" cy="${p.y - 10}" r="8" fill="#f0c878"/>
+            <text x="${p.x + 54}" y="${p.y - 6}" class="lab-badge-t">${u.pocet}</text>` : ''}
+          ${u.interrupt ? `<text x="${p.x - 76}" y="${p.y + 5}" class="lab-uzol-t" fill="#e8956f">⏸</text>` : ''}
+        </g>`;
+      }).join('')}
+      <text x="${W / 2}" y="14" class="lab-h-t" text-anchor="middle">START → ${escapeHtml(v.vstup)}</text>
+    </svg>`;
+  }
+
+  /* ── hlavné vykreslenie labu ── */
+  function renderLab(id) {
+    if (!LABY[id]) id = 'docker';
+    LAB_ID = id;
+    const L = LABY[id];
+    const e = labEngine(id);
+    const misie = labMisie(id);
+    if (LAB_AKT[id] === undefined) LAB_AKT[id] = 0;
+    const m = misie[LAB_AKT[id]] || misie[0];
+    const hotovych = labHotove(id);
+    const hotova = labStav(id)[m.id] === 'ok';
 
     setView(`
       <div class="page-head dk-head">
-        <h1>🐳 Docker Playground</h1>
-        <p class="lead">Celý Docker engine nasimulovaný v prehliadači — píš skutočné príkazy, plň misie.
-        <b>Nič nepokazíš.</b></p>
+        <h1>${L.ikona} ${L.titul}</h1>
+        <p class="lead">${L.popis}</p>
+      </div>
+
+      <div class="lab-prepinac reveal">
+        ${Object.entries(LABY).map(([x, cfg]) => `
+          <a class="lab-zalozka ${x === id ? 'akt' : ''}" data-route href="#/lab/${x}">
+            ${cfg.ikona} ${cfg.titul.replace(' Playground', '')}
+            <span class="lab-zalozka-pocet">${labHotove(x)}/${labMisie(x).length}</span>
+          </a>`).join('')}
       </div>
 
       <div class="dk-wrap reveal">
-        <!-- ĽAVÝ STĹPEC: misie -->
         <aside class="dk-misie">
-          <div class="dk-misie-head">
-            <span>🎯 Misie</span>
-            <span class="dk-misie-pocet">${hotovych}/${misie.length}</span>
-          </div>
+          <div class="dk-misie-head"><span>🎯 Misie</span><span class="dk-misie-pocet">${hotovych}/${misie.length}</span></div>
           <div class="dk-bar"><i style="width:${Math.round(hotovych / misie.length * 100)}%"></i></div>
           <ol class="dk-zoznam">
             ${misie.map((x, i) => `
-              <li class="dk-polozka ${i === DAKT ? 'akt' : ''} ${state.docker[x.id] === 'ok' ? 'hot' : ''}"
-                  data-action="dk-misia" data-i="${i}">
-                <span class="dk-check">${state.docker[x.id] === 'ok' ? '✓' : i + 1}</span>
+              <li class="dk-polozka ${i === LAB_AKT[id] ? 'akt' : ''} ${labStav(id)[x.id] === 'ok' ? 'hot' : ''}"
+                  data-action="lab-misia" data-i="${i}">
+                <span class="dk-check">${labStav(id)[x.id] === 'ok' ? '✓' : i + 1}</span>
                 <span class="dk-titul">${x.titul}</span>
                 <span class="dk-xp">+${x.xp}</span>
               </li>`).join('')}
           </ol>
-          <button class="btn btn-ghost btn-sm dk-reset" data-action="dk-reset">↺ Vyresetovať engine</button>
+          <button class="btn btn-ghost btn-sm dk-reset" data-action="lab-reset">↺ Vyresetovať</button>
         </aside>
 
-        <!-- STRED: zadanie + terminál -->
         <div class="dk-stred">
-          <div class="dk-zadanie ${state.docker[m.id] === 'ok' ? 'splnena' : ''}">
+          <div class="dk-zadanie ${hotova ? 'splnena' : ''}">
             <div class="dk-zadanie-head">
-              <span class="dk-badge">Misia ${DAKT + 1}/${misie.length}</span>
+              <span class="dk-badge">Misia ${LAB_AKT[id] + 1}/${misie.length}</span>
               <h3>${m.titul}</h3>
-              <span class="dk-stav">${state.docker[m.id] === 'ok' ? '✓ Splnená' : `+${m.xp} XP`}</span>
+              <span class="dk-stav">${hotova ? '✓ Splnená' : `+${m.xp} XP`}</span>
             </div>
             <p>${m.zadanie}</p>
             <div class="dk-ciel">🏁 <b>Cieľ:</b> ${m.ciel}</div>
             <div class="dk-akcie">
-              <button class="btn btn-primary btn-sm" data-action="dk-check">✓ Skontrolovať misiu</button>
-              <button class="btn btn-ghost btn-sm" data-action="dk-tip">💡 Pomôcka</button>
-              ${DAKT < misie.length - 1 ? `<button class="btn btn-ghost btn-sm" data-action="dk-dalsia">Ďalšia misia →</button>` : ''}
+              <button class="btn btn-primary btn-sm" data-action="lab-check">✓ Skontrolovať misiu</button>
+              <button class="btn btn-ghost btn-sm" data-action="lab-tip">💡 Pomôcka</button>
+              ${LAB_AKT[id] < misie.length - 1 ? `<button class="btn btn-ghost btn-sm" data-action="lab-dalsia">Ďalšia misia →</button>` : ''}
             </div>
-            <div class="dk-tipy" id="dkTipy"></div>
-            <div class="dk-vysledok" id="dkVysledok"></div>
+            <div class="dk-tipy" id="labTipy"></div>
+            <div class="dk-vysledok" id="labVysledok"></div>
           </div>
 
-          <div class="dk-term" id="dkTerm">
+          <div class="dk-term" id="labTerm">
             <div class="dk-term-head">
               <span class="dk-dots"><i></i><i></i><i></i></span>
-              <span class="dk-term-title">martin@akademia — ~/projekt</span>
-              <button class="dk-clear" data-action="dk-clear" title="Vyčistiť">clear</button>
+              <span class="dk-term-title">martin@akademia — ${escapeHtml(L.cesta)}</span>
+              <button class="dk-clear" data-action="lab-clear" title="Vyčistiť">clear</button>
             </div>
-            <div class="dk-out" id="dkOut">${uvodTerminalu()}</div>
+            <div class="dk-out" id="labOut">${labUvod(id)}</div>
             <div class="dk-line">
-              <span class="dk-prompt">➜ ~/projekt $</span>
-              <input id="dkIn" autocomplete="off" spellcheck="false" autocapitalize="off"
-                     placeholder="napíš príkaz a stlač Enter (help = zoznam príkazov)">
+              <span class="dk-prompt">➜ ${escapeHtml(L.cesta)} $</span>
+              <input id="labIn" autocomplete="off" spellcheck="false" autocapitalize="off"
+                     placeholder="${escapeHtml(L.placeholder)}">
             </div>
           </div>
         </div>
 
-        <!-- PRAVÝ STĹPEC: editor súborov -->
-        <aside class="dk-editor">
-          <div class="dk-editor-head">📁 Súbory v projekte</div>
-          <div class="dk-taby">
-            ${Object.keys(e.stav.subory).map(f => `
-              <button class="dk-tab ${f === DSUB ? 'akt' : ''}" data-action="dk-subor" data-f="${escapeHtml(f)}">${escapeHtml(f)}</button>`).join('')}
-          </div>
-          <textarea id="dkFile" spellcheck="false">${escapeHtml(e.stav.subory[DSUB] || '')}</textarea>
-          <div class="dk-editor-pata">
-            <span id="dkUlozene" class="dk-ulozene">Zmeny sa ukladajú automaticky</span>
-          </div>
-        </aside>
+        <aside class="dk-editor" id="labPanel">${panelHTML(id)}</aside>
       </div>`);
 
-    napojDockerTerminal();
+    napojLab(id);
   }
 
-  function uvodTerminalu() {
-    return [
-      '<div class="dk-r dim">Docker Playground — simulovaný engine (Docker version 27.3.1)</div>',
-      '<div class="dk-r dim">Napíš <b>help</b> pre zoznam príkazov, alebo rovno skús: <b>docker ps</b></div>',
-      '<div class="dk-r"></div>',
-    ].join('');
-  }
+  const labUvod = id => LABY[id].uvod
+    .map(r => `<div class="dk-r dim">${r}</div>`).join('') + '<div class="dk-r"></div>';
 
-  function napojDockerTerminal() {
-    const vstup = document.getElementById('dkIn');
-    const vystup = document.getElementById('dkOut');
-    const editor = document.getElementById('dkFile');
+  function napojLab(id) {
+    const vstup = document.getElementById('labIn');
     if (!vstup) return;
+    LAB_HIST[id] = LAB_HIST[id] || [];
     vstup.focus();
 
     vstup.addEventListener('keydown', ev => {
       if (ev.key === 'Enter') {
         const cmd = vstup.value;
         vstup.value = '';
-        if (cmd.trim()) { DHIST.push(cmd); DHI = DHIST.length; }
-        spustiVTermináli(cmd);
+        if (cmd.trim()) { LAB_HIST[id].push(cmd); LAB_HI[id] = LAB_HIST[id].length; }
+        spustiVLabe(id, cmd);
       } else if (ev.key === 'ArrowUp') {
         ev.preventDefault();
-        if (DHI > 0) { DHI--; vstup.value = DHIST[DHI] || ''; }
+        if (LAB_HI[id] === undefined) LAB_HI[id] = LAB_HIST[id].length;
+        if (LAB_HI[id] > 0) { LAB_HI[id]--; vstup.value = LAB_HIST[id][LAB_HI[id]] || ''; }
       } else if (ev.key === 'ArrowDown') {
         ev.preventDefault();
-        if (DHI < DHIST.length - 1) { DHI++; vstup.value = DHIST[DHI] || ''; }
-        else { DHI = DHIST.length; vstup.value = ''; }
+        if (LAB_HI[id] < LAB_HIST[id].length - 1) { LAB_HI[id]++; vstup.value = LAB_HIST[id][LAB_HI[id]] || ''; }
+        else { LAB_HI[id] = LAB_HIST[id].length; vstup.value = ''; }
       }
     });
 
-    // klik kamkoľvek do terminálu vráti kurzor do vstupu
-    document.getElementById('dkTerm')?.addEventListener('click', ev => {
+    document.getElementById('labTerm')?.addEventListener('click', ev => {
       if (!ev.target.closest('button')) vstup.focus();
     });
 
+    const editor = document.getElementById('labFile');
     if (editor) {
       editor.addEventListener('input', () => {
-        dockerEngine().stav.subory[DSUB] = editor.value;
-        const znacka = document.getElementById('dkUlozene');
-        if (znacka) {
-          znacka.textContent = '✓ Uložené do projektu';
-          znacka.classList.add('ok');
-          clearTimeout(znacka._t);
-          znacka._t = setTimeout(() => {
-            znacka.textContent = 'Zmeny sa ukladajú automaticky';
-            znacka.classList.remove('ok');
-          }, 1400);
+        labEngine(id).stav.subory[LAB_SUB[id]] = editor.value;
+        const z = document.getElementById('labUlozene');
+        if (z) {
+          z.textContent = '✓ Uložené do projektu';
+          z.classList.add('ok');
+          clearTimeout(z._t);
+          z._t = setTimeout(() => { z.textContent = 'Zmeny sa ukladajú automaticky'; z.classList.remove('ok'); }, 1400);
         }
+        skontrolujLabMisiu(id, true);
       });
     }
-    vystup.scrollTop = vystup.scrollHeight;
+    document.getElementById('labOut').scrollTop = 1e6;
   }
 
-  function spustiVTermináli(cmd) {
-    const e = dockerEngine();
-    const vystup = document.getElementById('dkOut');
-    const pridaj = (html) => { vystup.insertAdjacentHTML('beforeend', html); };
+  function obnovLabPanel(id) {
+    const p = document.getElementById('labPanel');
+    if (!p) return;
+    const fokus = document.activeElement && document.activeElement.id === 'labFile';
+    if (fokus) return;                 // nerušíme písanie v editore
+    p.innerHTML = panelHTML(id);
+    const editor = document.getElementById('labFile');
+    if (editor) {
+      editor.addEventListener('input', () => {
+        labEngine(id).stav.subory[LAB_SUB[id]] = editor.value;
+        skontrolujLabMisiu(id, true);
+      });
+    }
+  }
 
-    pridaj(`<div class="dk-r"><span class="dk-echo">➜ ~/projekt $</span> ${escapeHtml(cmd)}</div>`);
+  function spustiVLabe(id, cmd) {
+    const e = labEngine(id);
+    const vystup = document.getElementById('labOut');
+    const pridaj = html => vystup.insertAdjacentHTML('beforeend', html);
+    const L = LABY[id];
 
+    pridaj(`<div class="dk-r"><span class="dk-echo">➜ ${escapeHtml(L.cesta)} $</span> ${escapeHtml(cmd)}</div>`);
     const c = cmd.trim();
-    if (c === 'clear' || c === 'cls') { vystup.innerHTML = uvodTerminalu(); return; }
-    if (c === 'reset') { e.reset(); pridaj('<div class="dk-r ok">Engine vyresetovaný — začíname s čistým stolom.</div>'); renderDocker(); return; }
-
+    if (c === 'clear' || c === 'cls') { vystup.innerHTML = labUvod(id); return; }
+    if (c === 'reset') {
+      e.reset(); renderLab(id);
+      toast('Playground vyresetovaný.', '↺');
+      return;
+    }
     if (c) {
       let riadky;
-      try {
-        riadky = e.spusti(c);
-      } catch (err) {
+      try { riadky = e.spusti(c); }
+      catch (err) {
         riadky = [{ text: `Playground si s týmto príkazom neporadil (${err.name}). Skús iný — engine beží ďalej.`, cls: 'err' }];
       }
       riadky.forEach(r => pridaj(`<div class="dk-r ${r.cls || ''}">${escapeHtml(String(r.text ?? ''))}</div>`));
-      // ak sa zmenili súbory (napr. reset), premietni do editora
-      const editor = document.getElementById('dkFile');
-      if (editor && e.stav.subory[DSUB] !== undefined && editor.value !== e.stav.subory[DSUB]) {
-        editor.value = e.stav.subory[DSUB];
-      }
-      // automatická kontrola aktívnej misie
-      skontrolujMisiu(true);
+      obnovLabPanel(id);
+      skontrolujLabMisiu(id, true);
     }
     pridaj('<div class="dk-r"></div>');
     vystup.scrollTop = vystup.scrollHeight;
   }
 
-  function skontrolujMisiu(ticho) {
-    const misie = window.DOCKER_MISIE;
-    const m = misie[DAKT];
-    const box = document.getElementById('dkVysledok');
+  function skontrolujLabMisiu(id, ticho) {
+    const misie = labMisie(id);
+    const m = misie[LAB_AKT[id]];
+    const box = document.getElementById('labVysledok');
     if (!m || !box) return;
     let v;
-    try { v = m.kontrola(dockerEngine()); }
+    try { v = m.kontrola(labEngine(id)); }
     catch (err) { v = { ok: false, preco: 'Kontrolu sa nepodarilo vyhodnotiť.' }; }
 
     if (v.ok) {
       box.className = 'dk-vysledok show good';
-      box.innerHTML = `🎉 <b>Misia splnená!</b> ${DAKT < misie.length - 1 ? 'Môžeš prejsť na ďalšiu.' : 'Prešiel si celý Playground — klobúk dole.'}`;
-      if (state.docker[m.id] !== 'ok') {
-        state.docker[m.id] = 'ok';
+      box.innerHTML = `🎉 <b>Misia splnená!</b> ${LAB_AKT[id] < misie.length - 1 ? 'Môžeš prejsť na ďalšiu.' : 'Prešiel si celý Playground — klobúk dole.'}`;
+      if (labStav(id)[m.id] !== 'ok') {
+        labStav(id)[m.id] = 'ok';
         persist();
-        addXP(m.xp, document.querySelector('[data-action="dk-check"]'));
+        addXP(m.xp, document.querySelector('[data-action="lab-check"]'));
         confettiBurst(50);
         checkBadges();
         buildSidebar();
         const p = document.querySelector('.dk-misie-pocet');
         const b = document.querySelector('.dk-bar i');
-        const pol = document.querySelector(`.dk-polozka[data-i="${DAKT}"]`);
-        if (p) p.textContent = `${dockerHotove()}/${misie.length}`;
-        if (b) b.style.width = Math.round(dockerHotove() / misie.length * 100) + '%';
+        const pol = document.querySelector(`.dk-polozka[data-i="${LAB_AKT[id]}"]`);
+        const zal = document.querySelector(`.lab-zalozka.akt .lab-zalozka-pocet`);
+        if (p) p.textContent = `${labHotove(id)}/${misie.length}`;
+        if (b) b.style.width = Math.round(labHotove(id) / misie.length * 100) + '%';
+        if (zal) zal.textContent = `${labHotove(id)}/${misie.length}`;
         if (pol) { pol.classList.add('hot'); pol.querySelector('.dk-check').textContent = '✓'; }
         document.querySelector('.dk-zadanie')?.classList.add('splnena');
-        const stav = document.querySelector('.dk-stav');
-        if (stav) stav.textContent = '✓ Splnená';
+        const st = document.querySelector('.dk-stav');
+        if (st) st.textContent = '✓ Splnená';
       }
     } else if (!ticho) {
       box.className = 'dk-vysledok show miss';
       box.innerHTML = `🔎 Ešte nie: ${v.preco}`;
     }
   }
+
 
   /* ----------------------------------------------------------
      VIEW: KLIKACÍ KÓD (výber zo 4 možností)
@@ -2243,7 +2445,8 @@
       case 'project': renderProject(); break;
       case 'practice': renderPractice(); break;
       case 'choice': parts[1] ? renderChoiceLesson(parts[1]) : renderChoiceOverview(); break;
-      case 'docker': renderDocker(); break;
+      case 'lab': renderLab(parts[1] || 'docker'); break;
+      case 'docker': renderLab('docker'); break;
       case 'badges': renderBadges(); break;
       case 'cheatsheet': renderCheatsheet(); break;
       default: renderDashboard();
@@ -2383,14 +2586,14 @@
         if (demo && DEMOS[demo.id] && !DEMOS[demo.id].played) setTimeout(() => playDemo(demo.id), 350);
       }
     }
-    else if (a === 'dk-misia') { DAKT = +t.dataset.i; renderDocker(); }
-    else if (a === 'dk-dalsia') { DAKT = Math.min(DAKT + 1, window.DOCKER_MISIE.length - 1); renderDocker(); }
-    else if (a === 'dk-check') skontrolujMisiu(false);
-    else if (a === 'dk-subor') { DSUB = t.dataset.f; renderDocker(); }
-    else if (a === 'dk-clear') { const o = document.getElementById('dkOut'); if (o) o.innerHTML = uvodTerminalu(); }
-    else if (a === 'dk-tip') {
-      const box = document.getElementById('dkTipy');
-      const m = window.DOCKER_MISIE[DAKT];
+    else if (a === 'lab-misia') { LAB_AKT[LAB_ID] = +t.dataset.i; renderLab(LAB_ID); }
+    else if (a === 'lab-dalsia') { LAB_AKT[LAB_ID] = Math.min(LAB_AKT[LAB_ID] + 1, labMisie(LAB_ID).length - 1); renderLab(LAB_ID); }
+    else if (a === 'lab-check') skontrolujLabMisiu(LAB_ID, false);
+    else if (a === 'lab-subor') { LAB_SUB[LAB_ID] = t.dataset.f; obnovLabPanel(LAB_ID); }
+    else if (a === 'lab-clear') { const o = document.getElementById('labOut'); if (o) o.innerHTML = labUvod(LAB_ID); }
+    else if (a === 'lab-tip') {
+      const box = document.getElementById('labTipy');
+      const m = labMisie(LAB_ID)[LAB_AKT[LAB_ID]];
       if (!box || !m) return;
       const uz = box.querySelectorAll('.dk-tip').length;
       if (uz >= m.tipy.length) return;
@@ -2398,10 +2601,10 @@
         `<div class="dk-tip"><b>Pomôcka ${uz + 1}/${m.tipy.length}:</b> ${m.tipy[uz]}</div>`);
       box.classList.add('show');
     }
-    else if (a === 'dk-reset') {
-      dockerEngine().reset();
-      renderDocker();
-      toast('Engine vyresetovaný — obrazy aj kontajnery sú preč.', '↺');
+    else if (a === 'lab-reset') {
+      labEngine(LAB_ID).reset();
+      renderLab(LAB_ID);
+      toast('Playground vyresetovaný.', '↺');
     }
     else if (a === 'ch-check') checkChoice(t.dataset.ch, t);
     else if (a === 'ch-hint') document.querySelector(`[data-chhint="${t.dataset.ch}"]`)?.classList.toggle('show');
