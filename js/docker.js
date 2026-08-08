@@ -145,11 +145,21 @@ __pycache__
         { meno: 'none', driver: 'null' },
       ],
       subory: Object.assign({}, SUBORY_START),
-      historia: [],     // všetky zadané príkazy (pre kontrolu misií)
+      historia: [],           // všetky zadané príkazy
+      // príznaky skutočne vykonaných vecí — misie sa kontrolujú podľa nich,
+      // nie podľa toho, čo si používateľ napísal do terminálu
+      logyVidene: [],         // obrazy kontajnerov, ktorých logy si naozaj videl
+      spadnutyPostgres: false,
+      buildZlyhal: false,
+      composeSpustenych: 0,
+      composeZhodeny: false,
     };
 
     const O = (text, cls) => ({ text, cls });
     const chyba = t => [O(t, 'err')];
+    // bezpečné hľadanie súboru — nesmie sa dostať na Object.prototype (cat toString…)
+    const maSubor = f => Object.prototype.hasOwnProperty.call(stav.subory, f) &&
+                         typeof stav.subory[f] === 'string';
 
     const najdiObraz = (repo, tag) => stav.obrazy.find(o =>
       o.repo === repo && (!tag || o.tag === tag));
@@ -194,20 +204,53 @@ __pycache__
 
     /* ── docker run ── */
     function run(args) {
-      const opt = { detach: false, porty: [], env: {}, volumes: [], meno: null, rm: false, it: false };
+      const opt = { detach: false, porty: [], env: {}, volumes: [], meno: null,
+                    rm: false, it: false, siet: null, workdir: null, restart: null };
       let i = 0;
       for (; i < args.length; i++) {
         const a = args[i];
         if (a === '-d' || a === '--detach') opt.detach = true;
         else if (a === '--rm') opt.rm = true;
         else if (a === '-it' || a === '-ti' || a === '-i' || a === '-t') opt.it = true;
-        else if (a === '-d-p') return chyba("unknown flag: --d-p");
-        else if (a === '-p' || a === '--publish') { opt.porty.push(args[++i]); }
+        else if (a === '-p' || a === '--publish') {
+          const h = args[++i];
+          if (!h) return chyba(`flag needs an argument: 'p' in -p\nSee 'docker run --help'.`);
+          opt.porty.push(h);
+        }
         else if (a.startsWith('-p') && a.length > 2) opt.porty.push(a.slice(2));
-        else if (a === '-e' || a === '--env') { const kv = args[++i] || ''; const j = kv.indexOf('='); if (j > 0) opt.env[kv.slice(0, j)] = kv.slice(j + 1); }
-        else if (a === '-v' || a === '--volume') opt.volumes.push(args[++i]);
-        else if (a === '--name') opt.meno = args[++i];
-        else if (a.startsWith('-')) return chyba(`unknown flag: ${a}\nSee 'docker run --help'.`);
+        else if (a === '-e' || a === '--env') {
+          const kv = args[++i] || '';
+          const j = kv.indexOf('=');
+          if (j > 0) opt.env[kv.slice(0, j)] = kv.slice(j + 1);
+          else if (kv) opt.env[kv] = '';
+        }
+        else if (a === '-v' || a === '--volume') {
+          const v = args[++i];
+          if (!v) return chyba(`flag needs an argument: 'v' in -v\nSee 'docker run --help'.`);
+          opt.volumes.push(v);
+        }
+        else if (a === '--name') {
+          opt.meno = args[++i];
+          if (!opt.meno) return chyba(`flag needs an argument: --name`);
+          if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(opt.meno)) {
+            return chyba(`docker: Error response from daemon: Invalid container name (${opt.meno}), only [a-zA-Z0-9][a-zA-Z0-9_.-] are allowed.`);
+          }
+        }
+        else if (a === '--network' || a === '--net') {
+          opt.siet = args[++i];
+          if (!opt.siet) return chyba(`flag needs an argument: --network`);
+          if (!stav.siete.some(s => s.meno === opt.siet)) {
+            return chyba(`docker: Error response from daemon: network ${opt.siet} not found.\nVytvor ju najprv: docker network create ${opt.siet}`);
+          }
+        }
+        else if (a === '-w' || a === '--workdir') opt.workdir = args[++i];
+        else if (a === '-u' || a === '--user' || a === '--entrypoint' ||
+                 a === '-m' || a === '--memory' || a === '--env-file' || a === '--restart') {
+          const hodnota = args[++i];
+          if (a === '--restart') opt.restart = hodnota;
+        }
+        else if (a === '--read-only' || a === '--init' || a === '--privileged') { /* prijmeme, netreba modelovať */ }
+        else if (a.startsWith('-')) return chyba(`docker: unknown flag: ${a}\nNapíš help pre zoznam podporovaných prepínačov.`);
         else break;
       }
       const spec = args[i];
@@ -248,7 +291,8 @@ __pycache__
       });
 
       const profil = kat || { dlhobeziaci: false, logy: [], cmd: '"…"' };
-      const chybaEnv = (profil.vyzaduje || []).filter(k => !(k in opt.env));
+      // prázdna hodnota sa počíta ako chýbajúca — presne ako v skutočnom postgres obraze
+      const chybaEnv = (profil.vyzaduje || []).filter(k => !opt.env[k]);
       const vlastnyBezDlhobezneho = obraz.vlastny;
 
       const k = {
@@ -258,6 +302,7 @@ __pycache__
         porty: opt.porty.slice(),
         env: Object.assign({}, opt.env),
         volumes: opt.volumes.slice(),
+        siet: opt.siet || 'bridge',
         vytvorene: Date.now(),
         cmd: prikaz.length ? `"${prikaz.join(' ')}"` : (profil.cmd || '"…"'),
         logy: [],
@@ -267,6 +312,11 @@ __pycache__
       if (chybaEnv.length) {
         k.stav = 'exited'; k.exitCode = 1;
         k.logy = (profil.chybaLogy || [`Error: chýba premenná ${chybaEnv[0]}`]).slice();
+        if (repo === 'postgres') stav.spadnutyPostgres = true;
+      } else if (prikaz.length) {
+        // vlastný príkaz prebíja CMD obrazu — aj pri vlastných (built) obrazoch
+        k.stav = 'exited'; k.exitCode = 0;
+        k.logy = [prikaz.join(' ').replace(/^echo\s+/, '')];
       } else if (vlastnyBezDlhobezneho) {
         // vlastný image z Dockerfile: beží, ak má CMD servera, inak dobehne
         const df = stav.subory['Dockerfile'] || '';
@@ -276,9 +326,6 @@ __pycache__
         k.logy = server
           ? ['INFO:     Started server process [1]', 'INFO:     Application startup complete.']
           : [String(stav.subory['app.py'] || '').match(/print\("(.*?)"\)/)?.[1] || 'Kontajner dobehol.'];
-      } else if (prikaz.length) {
-        k.stav = 'exited'; k.exitCode = 0;
-        k.logy = [prikaz.join(' ').replace(/^echo\s+/, '')];
       } else if (profil.dlhobeziaci) {
         k.stav = 'running'; k.exitCode = null; k.logy = (profil.logy || []).slice();
       } else {
@@ -312,11 +359,18 @@ __pycache__
 
     /* ── docker build ── */
     function build(args) {
-      let tagSpec = null, kontext = '.';
+      let tagSpec = null, kontext = null;
       for (let i = 0; i < args.length; i++) {
-        if (args[i] === '-t' || args[i] === '--tag') tagSpec = args[++i];
+        if (args[i] === '-t' || args[i] === '--tag') {
+          tagSpec = args[++i];
+          if (!tagSpec) return chyba(`flag needs an argument: 't' in -t`);
+          if (tagSpec === '.' || tagSpec.startsWith('/') || tagSpec.startsWith('./')) {
+            return chyba(`invalid reference format: "${tagSpec}" nie je platné meno obrazu (za -t patrí meno:tag, kontext je až na konci)`);
+          }
+        }
         else if (!args[i].startsWith('-')) kontext = args[i];
       }
+      if (kontext === null) return chyba(`"docker build" requires exactly 1 argument.\nUsage:  docker build [OPTIONS] PATH\nNezabudni na bodku na konci: docker build -t meno:tag .`);
       if (kontext !== '.') return chyba(`unable to prepare context: path "${kontext}" not found`);
       const df = stav.subory['Dockerfile'];
       if (!df || !df.trim()) return chyba('ERROR: failed to read dockerfile: open Dockerfile: no such file or directory');
@@ -325,6 +379,7 @@ __pycache__
         .filter(r => r && !r.startsWith('#'));
       const prvy = riadky[0] || '';
       if (!/^FROM\s/i.test(prvy)) {
+        stav.buildZlyhal = true;   // pre kontrolu misie 9
         return chyba('ERROR: failed to solve: dockerfile parse error: no build stage in current context (Dockerfile musí začínať inštrukciou FROM)');
       }
       const zaklad = prvy.split(/\s+/)[1];
@@ -372,32 +427,44 @@ __pycache__
       if (pod === 'up') {
         const detach = args.includes('-d') || args.includes('--detach');
         const sluzby = [];
-        let aktualna = null;
+        let aktualna = null, vSekciiSluzby = false, vPortoch = false;
         yml.split('\n').forEach(r => {
+          // sledujeme, v ktorej top-level sekcii sme (services / volumes / networks)
+          const top = /^([a-z0-9_-]+):\s*$/i.exec(r);
+          if (top) { vSekciiSluzby = top[1] === 'services'; aktualna = null; return; }
+          if (!vSekciiSluzby) return;
           const m = /^  ([a-z0-9_-]+):\s*$/i.exec(r);
-          if (m) { aktualna = { meno: m[1], image: null, porty: [], env: {} }; sluzby.push(aktualna); return; }
+          if (m) { aktualna = { meno: m[1], image: null, build: false, porty: [] }; sluzby.push(aktualna); vPortoch = false; return; }
           if (!aktualna) return;
           const mi = /^\s+image:\s*(\S+)/.exec(r);
-          if (mi) aktualna.image = mi[1].replace(/["']/g, '');
+          if (mi) { aktualna.image = mi[1].replace(/["']/g, ''); return; }
+          if (/^\s+build:/.test(r)) { aktualna.build = true; return; }
+          if (/^\s+ports:/.test(r)) { vPortoch = true; return; }
+          if (/^\s+[a-z_]+:/i.test(r)) { vPortoch = false; return; }
           const mp = /^\s+-\s*["']?(\d+:\d+)["']?/.exec(r);
-          if (mp && /ports/.test(yml.slice(0, yml.indexOf(r)).split('\n').slice(-3).join(''))) aktualna.porty.push(mp[1]);
+          if (mp && vPortoch) aktualna.porty.push(mp[1]);
         });
-        if (!sluzby.length) return chyba('services must be a mapping (skontroluj docker-compose.yml)');
+        if (!sluzby.length) return chyba('services must be a mapping (skontroluj docker-compose.yml — kľúč services a odsadenie o 2 medzery)');
 
-        const von = [O(`[+] Running ${sluzby.length}/${sluzby.length}`, 'ok')];
+        const von = [O(`[+] Running ${sluzby.length + 1}/${sluzby.length + 1}`, 'ok')];
+        if (!stav.siete.some(s => s.meno === 'akademia_default')) {
+          stav.siete.push({ meno: 'akademia_default', driver: 'bridge' });
+          von.push(O(' ✔ Network akademia_default  Created', 'ok'));
+        }
         sluzby.forEach(s => {
           const meno = `akademia-${s.meno}-1`;
           if (stav.kontajnery.some(k => k.meno === meno)) {
             von.push(O(` ✔ Container ${meno}  Running`, 'dim'));
             return;
           }
-          const { repo, tag } = rozlozObraz(s.image || 'nginx');
+          const { repo, tag } = rozlozObraz(s.image || (s.build ? 'moja-appka:1.0' : 'nginx'));
           const kat = KATALOG[repo];
           const vlastny = najdiObraz(repo, tag)?.vlastny;
-          if (!kat && !vlastny) {
+          if (!kat && !vlastny && !s.build) {
             von.push(O(` ✘ Container ${meno}  Error: image ${s.image} not found`, 'err'));
             return;
           }
+          if (!kat && !vlastny && s.build) pridajObraz(repo, tag, '142MB', true);
           if (kat && !najdiObraz(repo, tag)) pridajObraz(repo, tag, kat.velkost);
           const cmdZDockerfile = /CMD\s+\[([^\]]+)\]/i.exec(stav.subory['Dockerfile'] || '');
           stav.kontajnery.unshift({
@@ -411,6 +478,7 @@ __pycache__
           });
           von.push(O(` ✔ Container ${meno}  Started`, 'ok'));
         });
+        stav.composeSpustenych = stav.kontajnery.filter(k => k.compose).length;
         if (!detach) von.push(O('Tip: bez -d by ti compose obsadil terminál logmi.', 'warn'));
         return von;
       }
@@ -421,7 +489,14 @@ __pycache__
         const von = stav.kontajnery.filter(k => k.compose)
           .map(k => O(` ✔ Container ${k.meno}  Removed`, 'ok'));
         stav.kontajnery = stav.kontajnery.filter(k => !k.compose);
-        return [O(`[+] Running ${kolko}/${kolko}`, 'ok'), ...von];
+        stav.composeZhodeny = true;
+        stav.siete = stav.siete.filter(s => s.meno !== 'akademia_default');
+        von.push(O(' ✔ Network akademia_default  Removed', 'ok'));
+        if (args.includes('-v') || args.includes('--volumes')) {
+          stav.volumes.length = 0;
+          von.push(O(' ✔ Volume dbdata  Removed', 'warn'));
+        }
+        return [O(`[+] Running ${kolko + 1}/${kolko + 1}`, 'ok'), ...von];
       }
 
       if (pod === 'ps') {
@@ -501,13 +576,23 @@ __pycache__
       if (prikaz === 'bash' || prikaz === 'sh' || prikaz === '/bin/bash') {
         return [O('(interaktívny shell nie je v Playgrounde dostupný — skús napr. docker exec ' + k.meno + ' ls)', 'dim')];
       }
-      if (prikaz.startsWith('cat ')) {
-        const f = prikaz.slice(4).trim().replace(/^\.?\//, '');
-        return stav.subory[f] ? stav.subory[f].split('\n').map(l => O(l))
-                              : chyba(`cat: ${f}: No such file or directory`);
+      if (prikaz.startsWith('cat')) {
+        const f = prikaz.slice(3).trim().replace(/^\.?\//, '');
+        if (!f) return chyba('cat: chýba názov súboru (skús: cat Dockerfile)');
+        return maSubor(f) ? stav.subory[f].split('\n').map(l => O(l))
+                          : chyba(`cat: ${f}: No such file or directory`);
       }
-      if (prikaz in EXEC_ODPOVEDE) return [O(EXEC_ODPOVEDE[prikaz])];
-      return chyba(`OCI runtime exec failed: exec failed: unable to start container process: exec: "${prikaz.split(' ')[0]}": executable file not found in $PATH`);
+      if (Object.prototype.hasOwnProperty.call(EXEC_ODPOVEDE, prikaz)) {
+        return [O(EXEC_ODPOVEDE[prikaz])];
+      }
+      // známy program s prepínačmi (ls -la, echo ahoj…) — nevydávaj to za chýbajúci program
+      const program = prikaz.split(' ')[0];
+      if (program === 'echo') return [O(prikaz.slice(5))];
+      if (Object.prototype.hasOwnProperty.call(EXEC_ODPOVEDE, program)) {
+        return [O(EXEC_ODPOVEDE[program]),
+                O(`(Playground nepozná variant „${prikaz}" — výstup je zjednodušený)`, 'dim')];
+      }
+      return chyba(`OCI runtime exec failed: exec failed: unable to start container process: exec: "${program}": executable file not found in $PATH`);
     }
 
     /* ── hlavný rozcestník ─────────────────────────────────── */
@@ -522,8 +607,9 @@ __pycache__
       if (t[0] === 'pwd') return [O('/home/martin/projekt')];
       if (t[0] === 'cat') {
         const f = (t[1] || '').replace(/^\.?\//, '');
-        return stav.subory[f] ? stav.subory[f].split('\n').map(l => O(l))
-                              : chyba(`cat: ${t[1]}: No such file or directory`);
+        if (!f) return chyba('cat: chýba názov súboru (skús: cat Dockerfile)');
+        return maSubor(f) ? stav.subory[f].split('\n').map(l => O(l))
+                          : chyba(`cat: ${t[1]}: No such file or directory`);
       }
       if (t[0] === 'help' || t[0] === 'pomoc') {
         return [
@@ -550,8 +636,22 @@ __pycache__
         return chyba(`${t[0]}: command not found (v Playgrounde funguje docker, ls, cat, help)`);
       }
 
-      const pod = t[1];
-      const a = t.slice(2);
+      let pod = t[1];
+      let a = t.slice(2);
+
+      // nápoveda v akomkoľvek tvare (docker help, docker --help, docker run --help)
+      if (!pod || pod === 'help' || pod === '--help' || pod === '-h' || a.includes('--help') || a.includes('-h')) {
+        return spusti('help');
+      }
+
+      // "docker container ls|rm|stop|start|logs|inspect" = alias na krátky tvar
+      if (pod === 'container') {
+        const mapa = { ls: 'ps', ps: 'ps', rm: 'rm', stop: 'stop', start: 'start',
+                       logs: 'logs', inspect: 'inspect', exec: 'exec', prune: 'prune' };
+        const novy = mapa[a[0]];
+        if (!novy) return chyba(`docker container: '${a[0] || ''}' is not a docker command.`);
+        pod = novy; a = a.slice(1);
+      }
 
       switch (pod) {
         case '--version':
@@ -572,6 +672,8 @@ __pycache__
         case 'logs': {
           const k = najdiKontajner(a.filter(x => !x.startsWith('-'))[0]);
           if (!k) return chyba(`Error response from daemon: No such container: ${a[0] || ''}`);
+          const obrazBezTagu = k.obraz.split(':')[0];
+          if (!stav.logyVidene.includes(obrazBezTagu)) stav.logyVidene.push(obrazBezTagu);
           return k.logy.length ? k.logy.map(l => O(l)) : [O('(kontajner zatiaľ nič nevypísal)', 'dim')];
         }
         case 'stop': {
@@ -585,10 +687,15 @@ __pycache__
         }
         case 'start': {
           if (!a.length) return chyba('"docker start" requires at least 1 argument.');
-          return a.map(x => {
+          return a.filter(x => !x.startsWith('-')).map(x => {
             const k = najdiKontajner(x);
             if (!k) return O(`Error response from daemon: No such container: ${x}`, 'err');
-            k.stav = 'running'; k.exitCode = null; k.vytvorene = Date.now();
+            const kat = KATALOG[k.obraz.split(':')[0]];
+            const dlho = (kat && kat.dlhobeziaci) || /uvicorn|gunicorn|flask/i.test(stav.subory['Dockerfile'] || '');
+            k.vytvorene = Date.now();
+            // jednorazový obraz (hello-world, python bez príkazu) hneď zase dobehne
+            k.stav = dlho ? 'running' : 'exited';
+            k.exitCode = dlho ? null : 0;
             return O(x);
           });
         }
@@ -665,6 +772,9 @@ __pycache__
           if (a[0] === 'create') {
             const meno = a[1];
             if (!meno) return chyba('"docker network create" requires exactly 1 argument.');
+            if (stav.siete.some(s => s.meno === meno)) {
+              return chyba(`Error response from daemon: network with name ${meno} already exists`);
+            }
             stav.siete.push({ meno, driver: 'bridge' });
             return [O(nahodneId(12) + nahodneId(52))];
           }
@@ -683,16 +793,31 @@ __pycache__
         case 'compose': return compose(a);
         case 'system': {
           if (a[0] === 'prune') {
+            const vsetkyObrazy = a.includes('-a') || a.includes('--all') || a.includes('-af');
             const zmazane = stav.kontajnery.filter(k => k.stav !== 'running');
             stav.kontajnery = stav.kontajnery.filter(k => k.stav === 'running');
+            // bez -a sa mažú IBA visiace (dangling) obrazy, nie otagované
             const nepouzite = stav.obrazy.filter(o =>
+              (vsetkyObrazy || o.tag === '<none>') &&
               !stav.kontajnery.some(k => k.obraz === `${o.repo}:${o.tag}`));
             stav.obrazy = stav.obrazy.filter(o => !nepouzite.includes(o));
-            return [
-              O('Deleted Containers:', 'head'),
-              ...zmazane.map(k => O(k.id, 'dim')),
-              O(`Total reclaimed space: ${(zmazane.length * 12 + nepouzite.length * 130).toFixed(1)}MB`, 'ok'),
-            ];
+            const naMB = v => parseFloat(String(v).replace(/[^\d.]/g, '')) *
+              (/kB/i.test(v) ? 0.001 : /GB/i.test(v) ? 1000 : 1);
+            const miesto = zmazane.length * 12 + nepouzite.reduce((s, o) => s + naMB(o.velkost), 0);
+            const von = [];
+            if (zmazane.length) {
+              von.push(O('Deleted Containers:', 'head'));
+              zmazane.forEach(k => von.push(O(k.id, 'dim')));
+            }
+            if (nepouzite.length) {
+              von.push(O('Deleted Images:', 'head'));
+              nepouzite.forEach(o => von.push(O(`untagged: ${o.repo}:${o.tag}`, 'dim')));
+            }
+            von.push(O(`Total reclaimed space: ${miesto ? miesto.toFixed(1) + 'MB' : '0B'}`, 'ok'));
+            if (!vsetkyObrazy && stav.obrazy.length) {
+              von.push(O('Tip: otagované nepoužité obrazy zmaže až docker system prune -a -f', 'dim'));
+            }
+            return von;
           }
           if (a[0] === 'df') {
             return tabulka(['TYPE', 'TOTAL', 'ACTIVE', 'SIZE'], [
@@ -739,6 +864,11 @@ __pycache__
         ];
         stav.subory = Object.assign({}, SUBORY_START);
         stav.historia.length = 0;
+        stav.logyVidene.length = 0;
+        stav.spadnutyPostgres = false;
+        stav.buildZlyhal = false;
+        stav.composeSpustenych = 0;
+        stav.composeZhodeny = false;
       },
     };
   }

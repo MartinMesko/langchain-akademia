@@ -221,13 +221,14 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]` }
 .venv
 __pycache__
 *.pyc
-.env              # ⚠️ kľúče nikdy do obrazu!
+# ⚠️ kľúče nikdy do obrazu — komentár MUSÍ byť na vlastnom riadku!
+.env
 .pytest_cache
 *.md
 Dockerfile` }
     ], output: `Pred:  transferring context: 284.51MB
 Po:    transferring context: 47.2kB`,
-      note: 'Menší kontext = rýchlejší build, menší obraz a hlavne <b>žiadne tajomstvá vnútri</b>. Kto má obraz, má aj všetko v ňom — <code>docker history</code> ukáže aj zmazané súbory z vrstiev.' },
+      note: 'Menší kontext = rýchlejší build, menší obraz a hlavne <b>žiadne tajomstvá vnútri</b>. Kto má obraz, má aj všetko v ňom: <code>docker history</code> odhalí príkazy buildu aj hodnoty <code>ENV</code>, a súbor zmazaný v neskoršej vrstve sa dá vytiahnuť zo staršej cez <code>docker save</code> (alebo nástrojom <code>dive</code>). Pozor tiež na to, že v <code>.dockerignore</code> je komentárom iba riadok začínajúci <code>#</code> — inline komentár za vzorom vzor pokazí.' },
     { t: 'h', x: 'Multi-stage build — obraz na diéte' },
     { t: 'p', x: 'Na <em>stavbu</em> potrebuješ kompilátory a build nástroje; na <em>beh</em> nie. Multi-stage build postaví appku v jednom obraze a do finálneho prenesie <strong>len výsledok</strong>:' },
     { t: 'pycharm', title: 'Dockerfile — multi-stage', files: [

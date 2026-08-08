@@ -371,7 +371,7 @@ window.LESSON_CHEATS = {
     ['Zmizol mi po Ctrl+C', 'Bežal v popredí — chýbalo <code>-d</code>.'],
     ['Mapovanie portu', '<code>-p HOSŤ:KONTAJNER</code>, teda „zvonku:zvnútra" (<code>-p 8080:80</code>).'],
     ['Konfigurácia kontajnera', '<code>-e KLUC=hodnota</code> pri <code>docker run</code>.'],
-    ['Rýchle upratanie', '<code>docker rm -f &lt;meno&gt;</code> (stop+rm), <code>docker system prune -f</code> (zastavené + nepoužité obrazy).'],
+    ['Rýchle upratanie', '<code>docker rm -f &lt;meno&gt;</code> (stop+rm) · <code>docker system prune -f</code> = kontajnery + <b>visiace</b> obrazy · <code>-a</code> navyše aj otagované nepoužité obrazy.'],
   ],
 
   l46: [

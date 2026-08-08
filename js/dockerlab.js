@@ -108,8 +108,12 @@ window.DOCKER_MISIE = [
       'Riešenie: <code>docker rm db</code>, potom <code>docker run -d --name db -e POSTGRES_PASSWORD=tajne postgres:16</code>',
     ],
     kontrola(e) {
-      if (!e.stav.historia.some(c => /^docker\s+logs\s/.test(c))) {
-        return { ok: false, preco: 'Najprv zisti z logov, prečo kontajner skončil (docker logs db).' };
+      // musel naozaj vzniknúť spadnutý postgres a musel si mu pozrieť logy
+      if (!e.stav.spadnutyPostgres) {
+        return { ok: false, preco: 'Najprv spusti postgres BEZ hesla, nech uvidíš, ako spadne: docker run -d --name db postgres:16' };
+      }
+      if (!e.stav.logyVidene || !e.stav.logyVidene.includes('postgres')) {
+        return { ok: false, preco: 'Zisti z logov, prečo kontajner skončil: docker logs db' };
       }
       const k = e.stav.kontajnery.find(x => x.meno === 'db');
       if (!k) return { ok: false, preco: 'Kontajner db neexistuje — spusti postgres pod menom db.' };
@@ -130,8 +134,10 @@ window.DOCKER_MISIE = [
     kontrola(e) {
       const k = e.stav.kontajnery.find(x => x.obraz.startsWith('postgres') && x.stav === 'running');
       if (!k) return { ok: false, preco: 'Nebeží žiadny postgres kontajner.' };
-      if (!k.volumes.some(v => String(v).split(':')[0] === 'dbdata')) {
-        return { ok: false, preco: 'Kontajneru chýba pripojený volume dbdata (-v dbdata:/var/lib/postgresql/data).' };
+      const v = k.volumes.find(x => String(x).split(':')[0] === 'dbdata');
+      if (!v) return { ok: false, preco: 'Kontajneru chýba pripojený volume dbdata (-v dbdata:/var/lib/postgresql/data).' };
+      if (String(v).split(':')[1] !== '/var/lib/postgresql/data') {
+        return { ok: false, preco: 'Volume je pripojený do zlého priečinka — postgres ukladá dáta do /var/lib/postgresql/data.' };
       }
       if (!e.stav.volumes.some(v => v.meno === 'dbdata')) return { ok: false, preco: 'Volume dbdata neexistuje.' };
       if (!e.stav.historia.some(c => /^docker\s+volume\s+ls/.test(c))) {
@@ -165,8 +171,11 @@ window.DOCKER_MISIE = [
       'Riešenie: vráť <code>FROM python:3.12-slim</code> a spusti <code>docker build -t moja-appka:2.0 .</code>',
     ],
     kontrola(e) {
+      if (!e.stav.buildZlyhal) {
+        return { ok: false, preco: 'Najprv zmaž v editore riadok FROM a skús build — pointa misie je vidieť chybu parsera.' };
+      }
       if (!e.stav.obrazy.some(x => x.repo === 'moja-appka' && x.tag === '2.0')) {
-        return { ok: false, preco: 'Obraz moja-appka:2.0 ešte neexistuje.' };
+        return { ok: false, preco: 'Chybu si videl — teraz vráť riadok FROM späť a postav obraz moja-appka:2.0.' };
       }
       return { ok: true };
     },
@@ -182,9 +191,12 @@ window.DOCKER_MISIE = [
     ],
     kontrola(e) {
       const h = e.stav.historia;
-      if (!h.some(c => /^docker\s+compose\s+up.*-d/.test(c))) return { ok: false, preco: 'Ešte si nespustil stack cez docker compose up -d.' };
+      // stack musel naozaj vzniknúť — zlyhaný compose sa nepočíta
+      if (!e.stav.composeSpustenych || e.stav.composeSpustenych < 2) {
+        return { ok: false, preco: 'Zatiaľ nebežali aspoň dve služby naraz. Spusti stack: docker compose up -d (a ak hlási chybu, oprav docker-compose.yml v editore).' };
+      }
       if (!h.some(c => /^docker\s+compose\s+ps/.test(c))) return { ok: false, preco: 'Over stav služieb cez docker compose ps.' };
-      if (!h.some(c => /^docker\s+compose\s+down/.test(c))) return { ok: false, preco: 'Nakoniec stack zhoď cez docker compose down.' };
+      if (!e.stav.composeZhodeny) return { ok: false, preco: 'Nakoniec stack zhoď cez docker compose down.' };
       if (e.stav.kontajnery.some(k => k.compose)) return { ok: false, preco: 'Compose kontajnery ešte bežia — zhoď ich cez docker compose down.' };
       return { ok: true };
     },
@@ -201,8 +213,13 @@ window.DOCKER_MISIE = [
     kontrola(e) {
       const bezi = e.stav.kontajnery.filter(k => k.stav === 'running' && k.obraz.startsWith('nginx'));
       if (bezi.length < 2) return { ok: false, preco: `Bežia zatiaľ ${bezi.length} nginx kontajnery, treba dva naraz.` };
-      const porty = bezi.flatMap(k => k.porty.map(p => String(p).split(':')[0]));
-      if (new Set(porty).size < 2) return { ok: false, preco: 'Oba kontajnery musia mať namapovaný iný hostiteľský port.' };
+      // každý musí mať vlastný namapovaný port — nestačí, že ich má jeden dva
+      const bezPortu = bezi.find(k => !k.porty.length);
+      if (bezPortu) return { ok: false, preco: `Kontajner ${bezPortu.meno} nemá namapovaný žiadny port (-p …:80).` };
+      const prve = bezi.map(k => String(k.porty[0]).split(':')[0]);
+      if (new Set(prve).size < bezi.length) {
+        return { ok: false, preco: 'Každý kontajner musí mať INÝ hostiteľský port.' };
+      }
       return { ok: true };
     },
   },
@@ -211,7 +228,7 @@ window.DOCKER_MISIE = [
     zadanie: 'Na záver sprav poriadok: <b>zastav a odstráň všetky kontajnery</b> a zmaž nepoužívané obrazy tak, aby ti neostal žiadny kontajner (ani zastavený).',
     ciel: 'Žiadny kontajner v <code>docker ps -a</code>',
     tipy: [
-      'Zastavené kontajnery a nepoužité obrazy pozametá <code>docker system prune -f</code>.',
+      'Zastavené kontajnery a visiace obrazy pozametá <code>docker system prune -f</code> (s <code>-a</code> aj otagované nepoužité obrazy).',
       'Bežiace kontajnery prune nezmaže — tie treba najprv zastaviť (<code>docker stop</code>) alebo <code>docker rm -f</code>.',
       'Riešenie: postupne <code>docker rm -f &lt;meno&gt;</code> pre bežiace, potom <code>docker system prune -f</code>.',
     ],

@@ -2,7 +2,11 @@
 
 Interaktívna výučbová aplikácia pokrývajúca **kompletný obsah kurzu
 „LangChain: Inteligentné aplikácie s ChatGPT"** (Skillmea, Marek Kučák) —
-všetkých 23 kapitol v 4 sekciách.
+všetkých 23 kapitol — plus rozsiahlu nadstavbu na zamestnateľnosť:
+**49 lekcií v 9 sekciách**, 490 cvičení „Napíš kód", 490 klikacích cvičení
+a simulovaný Docker Playground.
+
+🌐 Online: **https://martinmesko.github.io/langchain-akademia/**
 
 ## Spustenie
 
@@ -33,6 +37,9 @@ ako poistka. Ak by úložisko niekedy nebolo dostupné, appka nespadne a upozorn
 |---|---|
 | 📖 **23 lekcií + 🐍 Python rýchlokurz** | podrobná teória v slovenčine: modely, prompty, chainy, LCEL, tools, agenty, RAG (loaders → splitters → embeddingy → Chroma → retrievery), chatboty s pamäťou, Streamlit, Ollama, LangSmith, LangServe — plus 2 prípravné lekcie Pythonu pre úplných nováčikov |
 | 🤖 **Bonus: Kariéra v AI (8 lekcií)** | nadstavba pre zamestnateľnosť: LangGraph, multi-agentové systémy, pokročilý RAG (multi-query, hybrid search, reranking), evaluácia (LLM-as-judge), bezpečnosť a guardrails, optimalizácia nákladov, produkčné nasadenie s Dockerom a kariérna príprava (portfólio, CV, pohovor) |
+| 🛡️ **Bezpečnosť LLM a agentov (6 lekcií)** | OWASP Top 10 for LLM Apps 2025, agentické hrozby ASI01–ASI10, prompt injection do hĺbky, bezpečné nástroje a sandbox, RAG/MCP hrozby (tool poisoning, rug pull), prevádzka a red teaming |
+| 🏗️ **Produkčný backend a cloud (7 lekcií)** | Azure OpenAI, asynchrónny LangChain (`ainvoke`/`gather`/streaming/fronty), PostgreSQL + pgvector, Redis, Elasticsearch, MongoDB, CI/CD s GitHub Actions, architektúra a resilience (retry, circuit breaker, SSE), LlamaIndex a seniorské zručnosti (ADR, trade-offy, agile, mentoring) |
+| 🐳 **Docker do hĺbky (3 lekcie)** | obrazy vs kontajnery a ich životný cyklus, Dockerfile s cache vrstiev a multi-stage buildom, volumes, siete a Compose |
 | 🔍 **Rozbory kódu riadok po riadku** | ku kľúčovému príkladu každej lekcie karta, ktorá ľudskou rečou vysvetlí každý dôležitý riadok — pre menej znalých Pythonu |
 | 🐍 **Python okienka** | fialové boxy vysvetľujúce jazykové koncepty (slovníky, lambda, dekorátory, `\|` operátor, walrus…) presne tam, kde sa prvýkrát objavia |
 | 🖥️ **40 PyCharm simulácií** | editor s Darcula témou, project tree, taby, syntax highlighting a **spustiteľná Run konzola** so streamovaným výstupom (zelené ▶) |
@@ -41,8 +48,10 @@ ako poistka. Ak by úložisko niekedy nebolo dostupné, appka nespadne a upozorn
 | 🏁 **Záverečný test** | 24 otázok, potrebných 80 % |
 | 🏗️ **Záverečný projekt** | Firemný AI asistent v 8 krokoch (RAG + pamäť + Streamlit + LangSmith + LangServe) |
 | 💼 **30 tréningových projektov** | praktické zadania od ⭐ (prvý chain, ~20 min) po ⭐⭐⭐ (nasadený RAG systém s API) — s požiadavkami, pomôckami, bonusmi a XP za dokončenie |
-| 📋 **Ťahák** | 12 kariet s kľúčovými snippetmi na kopírovanie |
-| 🎮 **Gamifikácia** | XP, 7 levelov, 12 odznakov, konfety, progress ringy — všetko sa ukladá do localStorage |
+| 🐳 **Docker Playground** | **simulovaný Docker engine priamo v prehliadači** — píšeš skutočné príkazy (`run`, `ps`, `logs`, `exec`, `build`, `volume`, `network`, `compose`) a dostávaš realistický výstup vrátane chýb. 12 misií od prvého kontajnera po Compose; každá sa kontroluje podľa **skutočného stavu enginu**, nie podľa textu príkazu. Súčasťou je editor Dockerfile a `docker-compose.yml` |
+| 🎯 **Klikací kód (490 cvičení)** | predvyplnený kód so skrytými kľúčovými časťami — namiesto písania vyberáš pri každej medzere zo 4 možností (10 cvičení ku každej lekcii, generované z riešení „Napíš kód") |
+| 📋 **Ťahák** | „kedy čo použiť" pre všetkých 49 lekcií + karty s kľúčovými snippetmi na kopírovanie |
+| 🎮 **Gamifikácia** | XP, levely, 15 odznakov, konfety, progress ringy — všetko sa ukladá do localStorage |
 
 ## Ovládanie
 
@@ -50,5 +59,6 @@ ako poistka. Ak by úložisko niekedy nebolo dostupné, appka nespadne a upozorn
 - **Enter** v doplňovacom políčku — skontrolovať odpoveď
 - Klik na bežiacu konzolu — preskočiť animáciu výpisu
 - 🔍 v bočnom paneli — filtrovanie lekcií
+- V Docker Playgrounde: **↑/↓** — história príkazov, `help` — zoznam príkazov, `reset` — čistý engine
 
 Postup sa ukladá automaticky v prehliadači (localStorage).

@@ -79,12 +79,12 @@ docker run -d -p 9001:80 --name w2 nginx`),
 docker inspect db`),
 
     W('Veľké upratovanie',
-      'Napíš dva príkazy: násilne zmaž bežiaci kontajner <code>db</code> (jedným príkazom aj so zastavením) a potom pozametaj všetky zastavené kontajnery a nepoužité obrazy bez pýtania sa na potvrdenie.',
+      'Napíš dva príkazy: násilne zmaž bežiaci kontajner <code>db</code> (jedným príkazom aj so zastavením) a potom pozametaj zastavené kontajnery aj <b>všetky nepoužité obrazy</b> — bez pýtania sa na potvrdenie.',
       `# tvoje príkazy...`,
-      [['docker rm -f db'], ['docker system prune'], ['-f']],
-      'docker rm -f = stop + rm naraz. docker system prune -f upratuje bez otázky „naozaj?" (prepínač -f = force).',
+      [['docker rm -f db'], ['docker system prune'], ['-a'], ['-f']],
+      'docker rm -f = stop + rm naraz. Samotné docker system prune -f zmaže len kontajnery a VISIACE (dangling) obrazy — na otagované nepoužité obrazy treba pridať -a.',
       `docker rm -f db
-docker system prune -f`),
+docker system prune -a -f`),
   ]);
 
   /* ── l46: Dockerfile ── */

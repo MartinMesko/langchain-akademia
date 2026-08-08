@@ -1913,8 +1913,13 @@
     if (c === 'reset') { e.reset(); pridaj('<div class="dk-r ok">Engine vyresetovaný — začíname s čistým stolom.</div>'); renderDocker(); return; }
 
     if (c) {
-      const riadky = e.spusti(c);
-      riadky.forEach(r => pridaj(`<div class="dk-r ${r.cls || ''}">${escapeHtml(r.text ?? '')}</div>`));
+      let riadky;
+      try {
+        riadky = e.spusti(c);
+      } catch (err) {
+        riadky = [{ text: `Playground si s týmto príkazom neporadil (${err.name}). Skús iný — engine beží ďalej.`, cls: 'err' }];
+      }
+      riadky.forEach(r => pridaj(`<div class="dk-r ${r.cls || ''}">${escapeHtml(String(r.text ?? ''))}</div>`));
       // ak sa zmenili súbory (napr. reset), premietni do editora
       const editor = document.getElementById('dkFile');
       if (editor && e.stav.subory[DSUB] !== undefined && editor.value !== e.stav.subory[DSUB]) {
